@@ -8,8 +8,12 @@ trait Strip<const N: usize> {
 	type Inner: Strip<N - 1>;
 	const VALUE: StripValue;
 }
-impl Strip<0> for RangeFull {
-	type Inner = RangeFull;
+impl<const N: usize> Strip<N> for () {
+	type Inner = ();
+	const VALUE: StripValue = StripValue::End; 
+}
+impl Strip<1> for RangeFull {
+	type Inner = ();
 	const VALUE: StripValue = StripValue::End;
 }
 impl<const N: usize, T: Strip<N - 1>> Strip<N> for RangeTo<T> {
@@ -21,7 +25,7 @@ impl<const N: usize, T: Strip<N - 1>> Strip<N> for RangeToInclusive<T> {
 	const VALUE: StripValue = StripValue::One;
 }
 
-const fn eval_strip<T: Strip>(_strip: &T) {
+const fn eval_strip<const N: usize, T: Strip<N>>(_strip: &T) {
 	match <T>::VALUE {
 		StripValue::Zero => {},
 		StripValue::One => {},
