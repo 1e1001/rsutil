@@ -4,19 +4,19 @@ use std::ops::{RangeFull, RangeTo, RangeToInclusive};
 enum StripValue {
 	Zero, One, End
 }
-trait Strip {
-	type Inner: Strip;
+trait Strip<const N: usize> {
+	type Inner: Strip<N - 1>;
 	const VALUE: StripValue;
 }
-impl Strip for RangeFull {
+impl Strip<0> for RangeFull {
 	type Inner = RangeFull;
 	const VALUE: StripValue = StripValue::End;
 }
-impl<T: Strip> Strip for RangeTo<T> {
+impl<const N: usize, T: Strip<N - 1>> Strip<N> for RangeTo<T> {
 	type Inner = T;
 	const VALUE: StripValue = StripValue::Zero;
 }
-impl<T: Strip> Strip for RangeToInclusive<T> {
+impl<const N: usize, T: Strip<N - 1>> Strip<N> for RangeToInclusive<T> {
 	type Inner = T;
 	const VALUE: StripValue = StripValue::One;
 }
