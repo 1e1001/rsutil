@@ -40,7 +40,7 @@ pub trait PunchCard {
 }
 
 macro_rules! pcard {
-	(($($in_type:ty => $shift:expr),+ $(,)?) $out_type:ty, $out_push:expr, $new_out:expr) => (
+	(($($in_type:ty),+ $(,)?), $eval:expr, $out_type:ty, $out_push:expr, $new_out:expr) => (
 		impl<$($in_type),+> PunchCard for ($($in_type),+)
 		where $($in_type: PunchCardLine),+ {
 			type Tail = ($($in_type::Tail),+);
@@ -49,7 +49,7 @@ macro_rules! pcard {
 			fn eval(v: &mut $out_type) {
 				// we use || here to keep going and catch any length mismatches
 				if $($in_type::LENGTH > 0)||+ {
-					$out_push(v, $($shift)|+);
+					$out_push(v, $eval);
 					Self::Tail::eval(v);
 				}
 			}
@@ -63,26 +63,26 @@ macro_rules! pcard {
 	);
 }
 macro_rules! pcard_int {
-	($($typ:ty => $offset:expr),+ $(,)?) => (
-		($($typ => $typ::HEAD << $offset))
+	($res:ty, ($($typ:ty => $offset:expr),+ $(,)?)) => (
+		pcard!(($($typ),+), $(($typ::HEAD << $offset))|+, Vec<$res>, Vec::push. Vec::new())
 	);
 }
 /// TODO: consider using a BitVec for this
-pcard!{(T => T::HEAD), Vec<bool>, Vec::new()}
-pcard!{pcard_int(
+pcard!{(T), T::HEAD, Vec<bool>, Vec::new()}
+pcard_int!{u8, (
 	T0 => 7, T1 => 6, T2 => 5, T3 => 4, T4 => 3, T5 => 2, T6 => 1, T7 => 0,
-), Vec<u8>, Vec::push, Vec::new()}
-pcard!{pcard_int(
+)}
+pcard_int!{u16, (
 	T0 => 15, T1 => 14, T2 => 13, T3 => 12, T4 => 11, T5 => 10, T6 =>  9, T7 =>  8, 
 	T8 =>  7, T9 =>  6, T10 => 5, T11 => 4, T12 => 3, T13 => 2, T14 => 1, T15 => 0,
-), Vec<u16>, Vec::push, Vec::new()}
-pcard!{pcard_int(
+)}
+pcard_int!{u32, (
 	T0  => 31, T1  => 30, T2  => 29, T3  => 28, T4  => 27, T5  => 26, T6  => 25, T7  => 24,
 	T8  => 23, T9  => 22, T10 => 21, T11 => 20, T12 => 19, T13 => 18, T14 => 17, T15 => 16,
 	T16 => 15, T17 => 14, T18 => 13, T19 => 12, T20 => 11, T21 => 10, T22 =>  9, T23 =>  8,
 	T24 =>  7, T25 =>  6, T26 =>  5, T27 =>  4, T28 =>  3, T29 =>  2, T30 =>  1, T31 =>  0,
-), Vec<u32>, Vec::push, Vec::new()}
-pcard!{pcard_int(
+)}
+pcard_int!{u64, (
 	T0  => 63, T1  => 62, T2  => 61, T3  => 60, T4  => 59, T5  => 58, T6  => 57, T7  => 56,
 	T8  => 55, T9  => 54, T10 => 53, T11 => 52, T12 => 51, T13 => 50, T14 => 49, T15 => 48,
 	T16 => 47, T17 => 46, T18 => 45, T19 => 44, T20 => 43, T21 => 42, T22 => 41, T23 => 40,
@@ -91,8 +91,8 @@ pcard!{pcard_int(
 	T40 => 23, T41 => 22, T42 => 21, T43 => 20, T44 => 19, T45 => 18, T46 => 17, T47 => 16,
 	T48 => 15, T49 => 14, T50 => 13, T51 => 12, T52 => 11, T53 => 10, T54 =>  9, T55 =>  8,
 	T56 =>  7, T57 =>  6, T58 =>  5, T59 =>  4, T60 =>  3, T61 =>  2, T62 =>  1, T63 =>  0,
-), Vec<u64>, Vec::push, Vec::new()}
-pcard!{pcard_int(
+)}
+pcard_int!{u128, (
 	T0  => 63, T1  => 62, T2  => 61, T3  => 60, T4  => 59, T5  => 58, T6  => 57, T7  => 56,
 	T8  => 55, T9  => 54, T10 => 53, T11 => 52, T12 => 51, T13 => 50, T14 => 49, T15 => 48,
 	T16 => 47, T17 => 46, T18 => 45, T19 => 44, T20 => 43, T21 => 42, T22 => 41, T23 => 40,
@@ -101,7 +101,7 @@ pcard!{pcard_int(
 	T40 => 23, T41 => 22, T42 => 21, T43 => 20, T44 => 19, T45 => 18, T46 => 17, T47 => 16,
 	T48 => 15, T49 => 14, T50 => 13, T51 => 12, T52 => 11, T53 => 10, T54 =>  9, T55 =>  8,
 	T56 =>  7, T57 =>  6, T58 =>  5, T59 =>  4, T60 =>  3, T61 =>  2, T62 =>  1, T63 =>  0,
-), Vec<u128>, Vec::push, Vec::new()}
+)}
 
 impl PunchCardLine for RangeFull {
 	const HEAD: u8 = panic!("length mismatch");
