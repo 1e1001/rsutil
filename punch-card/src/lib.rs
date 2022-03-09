@@ -25,6 +25,16 @@ trait PunchCardLine {
 	const LENGTH: usize;
 }
 
+pub trait PunchCardOutput<T>: Default {
+	fn push(&mut self, item: T);
+}
+
+impl<T> PunchCardOutput<T> for Vec<T> {
+	fn push(&mut self, item: T) {
+		Vec::push(self, item);
+	}
+}
+
 /// A collection of vertically-stacked `PunchCardLine`'s.
 pub trait PunchCard {
 	/// The tail of every line, as a card.
@@ -34,28 +44,29 @@ pub trait PunchCard {
 	/// Internal evaluation function, evaluates this card and appends the value onto an output.
 	///
 	/// Don't call this directly, use `punch_card` instead
-	fn eval(v: &mut Self::Output);
+	fn eval<T: PunchCardOutput<Self::Output>>(v: &mut T);
 	/// Returns the value of a punched card.
-	fn punch_card(&self) -> Self::Output;
+	fn punch_card<T: PunchCardOutput<Self::Output>>(&self) -> T;
 }
 
+// TODO: library doesn't work until this macro uses the new output-passing style
 macro_rules! pcard {
-	(($($in_type:ty),+ $(,)?), $eval:expr, $out_type:ty, $out_push:expr, $new_out:expr) => (
+	(($($in_type:ty),+ $(,)?), $eval:expr, $out_type:ty) => (
 		impl<$($in_type),+> PunchCard for ($($in_type),+)
 		where $($in_type: PunchCardLine),+ {
 			type Tail = ($($in_type::Tail),+);
 			type Output = $out_type;
 			#[inline(always)]
-			fn eval(v: &mut $out_type) {
+			fn eval<T: PunchCardOutput<Self::Output>>(v: &mut T) {
 				// we use || here to keep going and catch any length mismatches
 				if $($in_type::LENGTH > 0)||+ {
-					$out_push(v, $eval);
+					(v, $eval);
 					Self::Tail::eval(v);
 				}
 			}
 			#[inline(always)]
-			fn punch_card(&self) -> $out_type {
-				let mut out = $new_out;
+			fn punch_card<T: PunchCardOutput<Self::Output>>(&self) -> $out_type {
+				let mut out = <T>::default();
 				Self::eval(&mut out);
 				out
 			}
@@ -64,11 +75,11 @@ macro_rules! pcard {
 }
 macro_rules! pcard_int {
 	($res:ty, ($($typ:ty => $offset:expr),+ $(,)?)) => (
-		pcard!(($($typ),+), $(($typ::HEAD << $offset))|+, Vec<$res>, Vec::push. Vec::new())
+		pcard!(($($typ),+), $(($typ::HEAD << $offset))|+, $res)
 	);
 }
 /// TODO: consider using a BitVec for this
-pcard!{(T), T::HEAD, Vec<bool>, Vec::new()}
+pcard!{(T), T::HEAD, bool}
 pcard_int!{u8, (
 	T0 => 7, T1 => 6, T2 => 5, T3 => 4, T4 => 3, T5 => 2, T6 => 1, T7 => 0,
 )}
