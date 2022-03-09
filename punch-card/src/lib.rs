@@ -20,7 +20,7 @@ use std::ops::{RangeFull, RangeTo, RangeToInclusive};
 /// ```
 trait PunchCardLine {
 	/// The tail of the line
-	type Inner: PunchCardLine;
+	type Tail: PunchCardLine;
 	/// The head of the line
 	const VALUE: bool;
 	/// The amount of remaining items in this line
@@ -30,7 +30,7 @@ trait PunchCardLine {
 /// A collection of vertically-stacked `PunchCardLine`'s.
 pub trait PunchCard {
 	/// The tail of every line, as a card.
-	type Inner: PunchCard;
+	type Tail: PunchCard;
 	/// The output type, usually a Vec<_>.
 	type Output;
 	/// Internal evaluation function, evaluates this line and appends the value onto an output.
@@ -45,13 +45,13 @@ macro_rules! pcard {
 	(($($in_type:ty => $shift:expr),* $(,)?), $t0:ty $out_type:ty, $out_push:expr, $new_out:expr) => (
 		impl<$($in_type),*> PunchCard for ($($in_type),*)
 		where $($in_type: PunchCardLine),* {
-			type Inner = ($($in_type::Inner),*);
+			type Tail = ($($in_type::Tail),*);
 			type Output = $out_type;
 			#[inline(always)]
 			fn eval(v: &mut $out_type) {
 				if $t0::LENGTH > 0 {
 					$out_push(v, $($shift)|*);
-					Self::Inner::eval(v);
+					Self::Tail::eval(v);
 				}
 			}
 			#[inline(always)]
@@ -105,18 +105,18 @@ pcard!{pcard_int(
 ), T0, Vec<u128>, Vec::push, Vec::new()}
 
 impl PunchCardLine for RangeFull {
-	type Inner = Self;
+	type Tail = Self;
 	const LENGTH: usize = 0;
 	const VALUE: u8 = panic!("length mismatch");
 }
 impl<T: PunchCardLine> PunchCardLine for RangeTo<T> {
-	type Inner = T;
-	const LENGTH: usize = Inner::LENGTH + 1;
+	type Tail = T;
+	const LENGTH: usize = Tail::LENGTH + 1;
 	const VALUE: u8 = false;
 }
 impl<T: PunchCardLine> PunchCardLine for RangeToInclusive<T> {
-	type Inner = T;
-	const LENGTH: usize = Inner::LENGTH + 1;
+	type Tail = T;
+	const LENGTH: usize = Tail::LENGTH + 1;
 	const VALUE: u8 = true;
 }
 
