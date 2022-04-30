@@ -1,5 +1,5 @@
 //! Testing stuff
-//! 
+//!
 //! TODO: add tests for u16, u32, and u64, and some "real"-world usage exaples (e.g. deserializing into a struct)
 
 use crate::PunchCard;
@@ -7,24 +7,32 @@ use crate::PunchCard;
 /// using a punch card to store strings
 #[test]
 fn string_decode() {
-	assert_eq!(str::from_utf8((
-		.. .. .. .. .. .. .. .. .. .. .. .. .. .. ..,
-		..=..=..=..=..=.. .. ..=..=..=..=..=.. .. ..,
-		.. ..=..=..=..=..=..=.. ..=..=..=..=..=.. ..,
-		.. .. .. .. .. .. .. ..=.. ..=.. .. .. .. ..,
-		..=.. ..=..=..=..=.. .. ..=.. ..=.. .. ..=..,
-		.. ..=..=..=..=..=.. ..=..=.. ..=..=.. .. ..,
-		.. .. .. .. ..=.. .. ..=..=..=.. .. .. ..=..,
-		.. ..=.. .. ..=.. .. ..=..=.. .. .. ..=.. ..,
-	).punch_card::<Vec<_>>()).unwrap(), "Hello, World!");
+	assert_eq!(
+		std::str::from_utf8(
+			&(
+				.. .. .. .. .. .. .. .. .. .. .. .. .. .. ..,
+				..=..=..=..=..=.. .. ..=..=..=..=..=.. .. ..,
+				.. ..=..=..=..=..=..=.. ..=..=..=..=..=.. ..,
+				.. .. .. .. .. .. .. ..=.. ..=.. .. .. .. ..,
+				..=.. ..=..=..=..=.. .. ..=.. ..=.. .. ..=..,
+				.. ..=..=..=..=..=.. ..=..=.. ..=..=.. .. ..,
+				.. .. .. .. ..=.. .. ..=..=..=.. .. .. ..=..,
+				.. ..=.. .. ..=.. .. ..=..=.. .. .. ..=.. ..,
+			)
+				.punch_card::<Vec<_>>()
+		)
+		.unwrap(),
+		"Hello, World!\n"
+	);
 }
 
 /// bool parsing can't ever length mismatch lol
 #[test]
 fn valid_u1() {
-	assert_eq!((
-		..=.. ..=..=.. .. ..=..=..=..,
-	).punch_card::<Vec<_>>(), vec![true, false, true, true, false, false, true, true, true]);
+	assert_eq!(
+		(..=.. ..=..=.. .. ..=..=..=..,).punch_card::<Vec<_>>(),
+		vec![true, false, true, true, false, false, true, true, true]
+	);
 }
 
 /// this is probably the most useful form of tape
@@ -48,12 +56,15 @@ fn valid_u8_0() {
 /// zero-length cards are valid
 #[test]
 fn valid_u8_1() {
-	assert_eq!((.., .., .., .., .., .., .., ..).punch_card::<Vec<_>>(), vec![]);
+	assert_eq!(
+		(.., .., .., .., .., .., .., ..).punch_card::<Vec<_>>(),
+		vec![]
+	);
 }
 
 /// line 0 was used in older versions as the source of truth, that's a bad idea
 #[test]
-//#[should_panic]
+#[should_panic]
 fn invalid_u8_0() {
 	(
 		.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..,
@@ -69,7 +80,7 @@ fn invalid_u8_0() {
 
 /// in said older versions the other lines would be padded with zeros
 #[test]
-//#[should_panic]
+#[should_panic]
 fn invalid_u8_1() {
 	(
 		.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..,
@@ -83,6 +94,7 @@ fn invalid_u8_1() {
 	).punch_card::<Vec<_>>();
 }
 
+// this is so large it causes an ICE, so it's commented out for now
 /// i'm sorry
 #[test]
 fn massive_u128() {
@@ -225,7 +237,7 @@ fn massive_u128() {
 		0x60606060606060606060606060606060, 0x61616161616161616161616161616161, 0x62626262626262626262626262626262, 0x63636363636363636363636363636363, 0x64646464646464646464646464646464, 0x65656565656565656565656565656565, 0x66666666666666666666666666666666, 0x67676767676767676767676767676767, 0x68686868686868686868686868686868, 0x69696969696969696969696969696969, 0x6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a, 0x6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b, 0x6c6c6c6c6c6c6c6c6c6c6c6c6c6c6c6c, 0x6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d6d, 0x6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e6e, 0x6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f6f,
 		0x70707070707070707070707070707070, 0x71717171717171717171717171717171, 0x72727272727272727272727272727272, 0x73737373737373737373737373737373, 0x74747474747474747474747474747474, 0x75757575757575757575757575757575, 0x76767676767676767676767676767676, 0x77777777777777777777777777777777, 0x78787878787878787878787878787878, 0x79797979797979797979797979797979, 0x7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a, 0x7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b, 0x7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c, 0x7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d7d, 0x7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e7e, 0x7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f,
 		0x80808080808080808080808080808080, 0x81818181818181818181818181818181, 0x82828282828282828282828282828282, 0x83838383838383838383838383838383, 0x84848484848484848484848484848484, 0x85858585858585858585858585858585, 0x86868686868686868686868686868686, 0x87878787878787878787878787878787, 0x88888888888888888888888888888888, 0x89898989898989898989898989898989, 0x8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a, 0x8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b, 0x8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c, 0x8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d8d, 0x8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e8e, 0x8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f8f,
-		0x90909090909090909090909090909090, 0x91919191919191919191919191919191, 0x92929292929292929292929292929292, 0x93939393939393939393939393939393, 0x94949494949494949494949494949494, 0x95959595959595959595959595959595, 0x96969696969696969696969696969696, 0x97979797979797979797979797979797, 0x98989898989898989898989898989898, 0x99999999999999999999999999999999, 0x9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a, 0x9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b, 0x9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c, 0x9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d, 0x9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e, 0x9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f, 
+		0x90909090909090909090909090909090, 0x91919191919191919191919191919191, 0x92929292929292929292929292929292, 0x93939393939393939393939393939393, 0x94949494949494949494949494949494, 0x95959595959595959595959595959595, 0x96969696969696969696969696969696, 0x97979797979797979797979797979797, 0x98989898989898989898989898989898, 0x99999999999999999999999999999999, 0x9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a, 0x9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b, 0x9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c, 0x9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d9d, 0x9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e9e, 0x9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f9f,
 		0xa0a0a0a0a0a0a0a0a0a0a0a0a0a0a0a0, 0xa1a1a1a1a1a1a1a1a1a1a1a1a1a1a1a1, 0xa2a2a2a2a2a2a2a2a2a2a2a2a2a2a2a2, 0xa3a3a3a3a3a3a3a3a3a3a3a3a3a3a3a3, 0xa4a4a4a4a4a4a4a4a4a4a4a4a4a4a4a4, 0xa5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5, 0xa6a6a6a6a6a6a6a6a6a6a6a6a6a6a6a6, 0xa7a7a7a7a7a7a7a7a7a7a7a7a7a7a7a7, 0xa8a8a8a8a8a8a8a8a8a8a8a8a8a8a8a8, 0xa9a9a9a9a9a9a9a9a9a9a9a9a9a9a9a9, 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, 0xabababababababababababababababab, 0xacacacacacacacacacacacacacacacac, 0xadadadadadadadadadadadadadadadad, 0xaeaeaeaeaeaeaeaeaeaeaeaeaeaeaeae, 0xafafafafafafafafafafafafafafafaf,
 		0xb0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0, 0xb1b1b1b1b1b1b1b1b1b1b1b1b1b1b1b1, 0xb2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2, 0xb3b3b3b3b3b3b3b3b3b3b3b3b3b3b3b3, 0xb4b4b4b4b4b4b4b4b4b4b4b4b4b4b4b4, 0xb5b5b5b5b5b5b5b5b5b5b5b5b5b5b5b5, 0xb6b6b6b6b6b6b6b6b6b6b6b6b6b6b6b6, 0xb7b7b7b7b7b7b7b7b7b7b7b7b7b7b7b7, 0xb8b8b8b8b8b8b8b8b8b8b8b8b8b8b8b8, 0xb9b9b9b9b9b9b9b9b9b9b9b9b9b9b9b9, 0xbabababababababababababababababa, 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb, 0xbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc, 0xbdbdbdbdbdbdbdbdbdbdbdbdbdbdbdbd, 0xbebebebebebebebebebebebebebebebe, 0xbfbfbfbfbfbfbfbfbfbfbfbfbfbfbfbf,
 		0xc0c0c0c0c0c0c0c0c0c0c0c0c0c0c0c0, 0xc1c1c1c1c1c1c1c1c1c1c1c1c1c1c1c1, 0xc2c2c2c2c2c2c2c2c2c2c2c2c2c2c2c2, 0xc3c3c3c3c3c3c3c3c3c3c3c3c3c3c3c3, 0xc4c4c4c4c4c4c4c4c4c4c4c4c4c4c4c4, 0xc5c5c5c5c5c5c5c5c5c5c5c5c5c5c5c5, 0xc6c6c6c6c6c6c6c6c6c6c6c6c6c6c6c6, 0xc7c7c7c7c7c7c7c7c7c7c7c7c7c7c7c7, 0xc8c8c8c8c8c8c8c8c8c8c8c8c8c8c8c8, 0xc9c9c9c9c9c9c9c9c9c9c9c9c9c9c9c9, 0xcacacacacacacacacacacacacacacaca, 0xcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcb, 0xcccccccccccccccccccccccccccccccc, 0xcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd, 0xcececececececececececececececece, 0xcfcfcfcfcfcfcfcfcfcfcfcfcfcfcfcf,
