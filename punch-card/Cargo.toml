@@ -1,6 +1,6 @@
 [package]
 name = "punch-card"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["1e1001"]
 description = "Punched cards in Rust"
