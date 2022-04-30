@@ -1,6 +1,6 @@
 # punch-card
 
-[![Crates.io](https://img.shields.io/crates/v/punch-card)](https://crates.io/crates/punch-card) [![MIT](https://img.shields.io/crates/l/punch-card)](./LICENSE)
+[![Crates.io](https://img.shields.io/crates/v/punch-card)](https://crates.io/crates/punch-card) [![MIT](https://img.shields.io/crates/l/punch-card)](./LICENSE) [![docs.rs](https://img.shields.io/docsrs/punch-card)](https://docs.rs/punch-card)
 
 A library for making punched cards like this:
 
