@@ -5,7 +5,6 @@ edition = "2021"
 authors = ["1e1001"]
 description = "Punched cards in Rust"
 license = "MIT"
-license-file = "LICENSE"
 documentation = "https://docs.rs/punch-card"
 homepage = "https://github.com/1e1001/punch-card"
 repository = "https://github.com/1e1001/punch-card"
