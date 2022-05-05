@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT
 //! Tests and the like
-//!
-//! TODO: add some "real"-world usage exaples (e.g. deserializing into a struct)
 
 extern crate test;
 
@@ -14,7 +12,7 @@ use crate::PunchCard;
 fn string_decode() {
 	#[rustfmt::skip]
 	assert_eq!(
-		std::str::from_utf8(
+		core::str::from_utf8(
 			&(
 				.. .. .. .. .. .. .. .. .. .. .. .. .. .. ..,
 				..=..=..=..=..=.. .. ..=..=..=..=..=.. .. ..,
@@ -30,6 +28,49 @@ fn string_decode() {
 		.unwrap(),
 		"Hello, World!\n"
 	);
+}
+
+/// using a punch card to store a struct
+#[test]
+fn struct_decode() {
+	#[derive(Debug, PartialEq, Eq)]
+	#[repr(C)]
+	struct Output {
+		a: [u32; 3],
+		b: u16,
+		c: u16,
+	}
+	#[rustfmt::skip]
+	#[cfg(target_endian = "little")]
+	let data = (
+		.. .. ..=.. .. ..=.. .. .. .. .. .. .. .. ..=.. ..,
+		.. .. .. .. .. ..=.. .. .. .. .. .. ..=.. .. .. ..,
+		..=.. ..=.. .. ..=.. .. .. .. .. .. ..=..=.. .. ..,
+		..=.. .. .. .. .. .. .. ..=.. .. .. .. ..=.. .. ..,
+		.. ..=.. .. .. .. .. .. .. .. .. .. ..=.. .. .. ..,
+		.. .. ..=.. ..=..=..=.. ..=..=.. .. ..=.. .. ..=..,
+		..=..=..=.. ..=..=..=.. .. ..=.. .. .. ..=..=..=..,
+		..=.. ..=.. ..=..=..=.. ..=..=.. .. .. .. ..=..=..,
+	).punch_card();
+	#[rustfmt::skip]
+	#[cfg(target_endian = "big")]
+	let data = (
+		.. ..=.. .. .. .. ..=.. .. .. .. .. .. ..=.. .. ..,
+		.. .. .. .. .. .. ..=.. .. .. .. .. .. .. .. ..=..,
+		.. ..=.. ..=.. .. ..=.. .. .. .. .. .. .. ..=..=..,
+		.. .. .. ..=.. .. .. .. .. .. .. ..=.. .. ..=.. ..,
+		.. .. ..=.. .. .. .. .. .. .. .. .. .. .. .. ..=..,
+		.. ..=.. .. .. ..=..=..=.. .. ..=..=..=.. .. ..=..,
+		.. ..=..=..=.. ..=..=..=.. .. ..=.. ..=..=..=.. ..,
+		.. ..=.. ..=.. ..=..=..=.. .. ..=..=..=..=.. .. ..,
+	).punch_card();
+	// safety: these are all integers so any bit combination is valid
+	let output: Output = unsafe {core::mem::transmute(data)};
+	assert_eq!(output, Output {
+		a: [10947123, 517895, 1813],
+		b: 12908,
+		c: 1923,
+	});
 }
 
 /// bool parsing can't ever length mismatch lol

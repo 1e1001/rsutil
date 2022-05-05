@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 //! Internal implementation stuff kept separate for some reason.
 
-use std::ops::{RangeFull, RangeTo, RangeToInclusive};
+use core::ops::{RangeFull, RangeTo, RangeToInclusive};
 
 /// A single line (or tail of a line) in a punched card.
 ///
@@ -20,21 +20,23 @@ use std::ops::{RangeFull, RangeTo, RangeToInclusive};
 /// ```
 ///
 pub trait PunchCardLine {
-	/// Head item of the line.
+	/// Head item / car of the line, [`true`](bool) for [`..=`](RangeToInclusive), [`false`](bool) for [`..=`](RangeTo)
 	const HEAD: Option<bool>;
+	/// Tail / cdr of the line
 	type Tail: PunchCardLine;
 	/// The amount of remaining items in this line.
 	const LENGTH: usize;
 }
 
 /// Inner punch card type with more things
+/// stored as a parallel linked list
 pub trait PunchCardInner {
+	/// Length of the first line, it's guaranteed to be not equal to all the other lines, otherwise parsing will fail
 	const LENGTH: usize;
 	/// The output type of one entry, usually an integer of some kind.
-	type Output;
-	/// Evaluation function, evaluates this card and appends the value onto the output.
+	type Output: Copy + Default;
+	/// Evaluates this section of the card and appends the value onto the output.
 	fn eval_part<const N: usize>(v: &mut [Self::Output; N], i: usize);
-	fn eval_full<const N: usize>(&self) -> [Self::Output; N];
 }
 
 macro_rules! punch_card_impl {
@@ -51,14 +53,6 @@ macro_rules! punch_card_impl {
 					v[i] = $eval;
 					<($($in_type::Tail),*,)>::eval_part(v, i + 1);
 				}
-			}
-			#[inline(always)]
-			#[track_caller]
-			fn eval_full<const N: usize>(&self) -> [Self::Output; N] {
-				debug_assert_eq!(Self::LENGTH, N);
-				let mut out = [Default::default(); N];
-				Self::eval_part(&mut out, 0);
-				out
 			}
 		}
 	};
@@ -79,15 +73,6 @@ impl<T: PunchCardLine> PunchCardInner for T {
 			v[i] = T::HEAD.expect("mismatched tape lengths");
 			T::Tail::eval_part(v, i + 1);
 		}
-	}
-
-	#[inline(always)]
-	#[track_caller]
-	fn eval_full<const N: usize>(&self) -> [Self::Output; N] {
-		debug_assert_eq!(Self::LENGTH, N);
-		let mut out = [Default::default(); N];
-		Self::eval_part(&mut out, 0);
-		out
 	}
 }
 punch_card_impl! {(T), T, T::HEAD.expect("mismatched tape lengths"), bool}

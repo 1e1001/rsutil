@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 //! # punch-card
 //!
+//! [![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/punch-card)
+//! [![Crates.io](https://img.shields.io/crates/v/punch-card)](https://crates.io/crates/punch-card)
+//! [![docs.rs](https://img.shields.io/docsrs/punch-card)](https://docs.rs/punch-card)
+//! [![MIT](https://img.shields.io/crates/l/punch-card)](https://github.com/1e1001/punch-card/blob/main/LICENSE)
+//!
 //! A library for making punched cards like this:
 //!
 //! ```rust
@@ -21,7 +26,7 @@
 //!
 //! ## Why?
 //!
-//! I saw the punch_card example in [`weird-exprs.rs`](https://github.com/rust-lang/rust/blob/master/src/test/ui/weird-exprs.rs) and (inspired by [`analog_literals`](https://crates.io/crates/analog_literals)) thought "what if that was useful?" and then created this.
+//! I saw the punch_card example in [`weird-exprs.rs`](https://github.com/rust-lang/rust/blob/bdcb6a99e853732f8ec050ae4986aa3af51d44c5/src/test/ui/weird-exprs.rs#L123-L131) and (inspired by [`analog_literals`](https://crates.io/crates/analog_literals)) thought "what if that was useful?" and then created this.
 //!
 //! ## Usage
 //!
@@ -44,6 +49,8 @@
 #![feature(test)]
 // needed for a test
 #![recursion_limit = "512"]
+#![deny(missing_docs)]
+#![no_std]
 
 use internal::PunchCardInner;
 
@@ -87,6 +94,9 @@ impl<T: PunchCardInner> PunchCard for T {
 	const LENGTH: usize = T::LENGTH;
 	type Output = T::Output;
 	fn punch_card(&self) -> [Self::Output; <Self as PunchCard>::LENGTH] {
-		self.eval_full()
+		debug_assert_eq!(T::LENGTH, <Self as PunchCard>::LENGTH);
+		let mut out = [Default::default(); <Self as PunchCard>::LENGTH];
+		Self::eval_part(&mut out, 0);
+		out
 	}
 }
