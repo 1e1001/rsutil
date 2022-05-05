@@ -24,3 +24,23 @@ println!("{}", std::str::from_utf8(&(
 ```
 
 For more information, [read the docs](https://docs.rs/punch-card).
+
+## Changelog
+
+### 1.1.0
+
+- added no_std support
+- better testing and documentation
+
+### 1.0.2
+
+- added another badge i forgot
+
+### 1.0.1
+
+- added badges and the like
+
+### 1.0.0
+
+- added everything
+- fixed metadata
