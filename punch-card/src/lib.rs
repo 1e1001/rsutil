@@ -94,7 +94,6 @@ impl<T: PunchCardInner> PunchCard for T {
 	const LENGTH: usize = T::LENGTH;
 	type Output = T::Output;
 	fn punch_card(&self) -> [Self::Output; <Self as PunchCard>::LENGTH] {
-		debug_assert_eq!(T::LENGTH, <Self as PunchCard>::LENGTH);
 		let mut out = [Default::default(); <Self as PunchCard>::LENGTH];
 		Self::eval_part(&mut out, 0);
 		out
