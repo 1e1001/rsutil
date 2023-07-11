@@ -19,5 +19,9 @@ assert_eq!(original, [1; 32]);
 
 for more information, [read the docs](https://docs.rs/miny).
 
+## Changelog
+### 1.0.0
+- initial release
+
 ## License
 [MIT](./LICENSE-MIT) or [Apache 2.0](./LICENSE-APACHE)
