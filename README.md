@@ -4,24 +4,31 @@
 [![docs.rs](https://img.shields.io/docsrs/miny)](https://docs.rs/miny)
 [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](#License)
 
-a `Box<T>` with `T` stored inline for values less than a pointer in size.
-```rs
-let small = Miny::new(1u8);
-let large = Miny::new([1usize; 32]);
+A `Box<T>` with `T` stored inline for values less than a pointer in size.
+```rust
+use miny::Miny;
+let small = Miny::new(1_u8);
+let large = Miny::new([1_usize; 32]);
 // small is stored inline on the stack
-assert!(small.on_stack());
+assert!(Miny::on_stack(&small));
 // large is stored with an allocation
-assert!(!large.on_stack());
+assert!(!Miny::on_stack(&large));
 // consume the miny and get back a value
-let original = large.into_inner();
+let original = Miny::into_inner(large);
 assert_eq!(original, [1; 32]);
 ```
 
-for more information, [read the docs](https://docs.rs/miny).
+For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 2.0.0
+- Redid the entire library to require qualified syntax, because I realized that that's probably a good idea
+
 ### 1.0.0
-- initial release
+- Initial release
 
 ## License
 [MIT](./LICENSE-MIT) or [Apache 2.0](./LICENSE-APACHE)
+
+
+<sub>(also hi please give me suggestions for more features to add, this crate feels kinda small)</sub>
