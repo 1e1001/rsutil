@@ -1,404 +1,269 @@
 // SPDX-License-Identifier: MIT
-#![deny(missing_docs)]
+#![feature(ptr_metadata, layout_for_ptr, unsize)]
+#![no_std]
 //! [![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/miny)
 //! [![Crates.io](https://img.shields.io/crates/v/miny)](https://crates.io/crates/miny)
 //! [![docs.rs](https://img.shields.io/docsrs/miny)](https://docs.rs/miny)
 //! [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](#LICENSE)
 //!
-//! a [`Miny<T>`] is like a [`Box<T>`] with `T` stored inline for values less than a pointer in size.
+//! A [`Miny<T>`][^1] is like a [`Box<T>`] with `T` stored inline for values
+//! less than a pointer in size. Requires nightly Rust[^2] & [`alloc`]
+//!
 //! # Examples
 //! ```
-//!# use miny::Miny;
-//! let small = Miny::new(1u8);
-//! let large = Miny::new([1usize; 32]);
+//! # use miny::Miny;
+//! let small = Miny::new(1_u8);
+//! let large = Miny::new([1_usize; 32]);
 //! // small is stored inline on the stack
-//! assert!(small.on_stack());
+//! assert!(Miny::on_stack(&small));
 //! // large is stored with an allocation
-//! assert!(!large.on_stack());
+//! assert!(!Miny::on_stack(&large));
 //! // consume the miny and get back a value
-//! let original = large.into_inner();
+//! let original = Miny::into_inner(large);
 //! assert_eq!(original, [1; 32]);
 //! ```
-//! to use unsized values, call [`.unsize`] with a type
+//! To use unsized values, call [`Miny::unsize`] with a type or use the
+//! [`new_unsized`] shorthand[^3]
 //! ```
-//!# use miny::Miny;
-//! let value = Miny::new([1usize; 32]).unsize::<[usize]>();
+//! # use miny::Miny;
+//! let value = Miny::new_unsized::<[usize]>([1_usize; 32]);
 //! // it's usable as a [usize]
 //! assert_eq!(value.len(), 32);
 //! // and you can consume it to get a boxed value
-//! let boxed = value.into_box();
-//! assert_eq!(boxed, Box::new([1usize; 32]) as Box<[usize]>);
+//! let boxed = Miny::into_box(value);
+//! assert_eq!(boxed, Box::new([1_usize; 32]) as Box<[usize]>);
 //! ```
-//! or you can create a box and convert the box to a [`Miny`]
+//! Or if you have a box you can directly convert it into a [`Miny`]
 //! ```
-//!# use miny::Miny;
-//! let large = Miny::from(Box::new([1usize; 32]) as Box<[usize]>);
+//! # use miny::Miny;
+//! let large = Miny::from(Box::new([1_usize; 32]) as Box<[usize]>);
 //! assert_eq!(large.len(), 32);
-//! // this is slightly inefficient as it boxes and then un-boxes the value
-//! let small = Miny::from(Box::new([1u8, 2]) as Box<[u8]>);
-//! assert_eq!(small.len(), 2);
+//! // this is slightly inefficient as it boxes and then un-boxes the value,
+//! // prefer using `new` / `new_unsized` for this
+//! let small = Miny::from(Box::new([1_u8, 2]) as Box<[u8]>); assert_eq!(small.len(), 2);
 //! ```
 //!
-//! # Other Info
-//! - uses the nightly [`ptr_metadata`], [`layout_for_ptr`], and [`unsize`] features
-//! - supports `#![no_std]` with `alloc`
-//! - tested with miri, *should* be sound
-//! - (the name is because it originally was just a "mini `Box<dyn Any>`")
+//! [^1]: The name is because it originally was just a "mini `Box<dyn Any>`", although it supports any type
 //!
+//! [^2]: Uses [`ptr_metadata`], [`layout_for_ptr`], and [`unsize`] features
+//!
+//! [^3]: This is needed because the [`Miny`] layout is [too weird] for
+//! [`CoerceUnsized`] to work properly
+//!
+//! [`new_unsized`]: Miny::new_unsized
+//! [too weird]: ../src/miny/lib.rs.html#79-83
+//! [`CoerceUnsized`]: core::ops::CoerceUnsized
 //! [`ptr_metadata`]: <https://github.com/rust-lang/rust/issues/81513>
 //! [`layout_for_ptr`]: <https://github.com/rust-lang/rust/issues/69835>
 //! [`unsize`]: <https://github.com/rust-lang/rust/issues/18598>
-//! [`.unsize`]: Miny::unsize
-#![feature(ptr_metadata, layout_for_ptr, unsize)]
-#![no_std]
+
+use core::alloc::Layout;
+use core::marker::{PhantomData, Unsize};
+use core::mem::{self, MaybeUninit};
+use core::ops::{Deref, DerefMut};
+use core::ptr::{self, NonNull, Pointee};
 
 extern crate alloc;
 
-use alloc::alloc::{handle_alloc_error, Layout};
+use alloc::alloc::handle_alloc_error;
 use alloc::boxed::Box;
-use alloc::fmt;
-use core::any::{Any, TypeId};
-use core::marker::{PhantomData, Unsize};
-use core::mem::{self, MaybeUninit};
-use core::ptr::{self, NonNull};
 
 #[cfg(test)]
 mod tests;
 
-type VTable<T> = <T as ptr::Pointee>::Metadata;
+mod impls;
 
-/// `Box<T>` but with small data stored inline
+/// [`Box<T>`] but with small data stored inline
 ///
-/// see the [crate docs](crate) for more
-pub struct Miny<T: ?Sized + 'static> {
-	meta: VTable<T>,
-	// either a pointer to data (allocated as a box) or an inline value small enough to fit
-	// only init it it's a pointer
+/// See the [crate docs](crate) for more
+pub struct Miny<T: ?Sized> {
+	meta: <T as Pointee>::Metadata,
 	data: MaybeUninit<*mut ()>,
-	_marker: PhantomData<T>,
+	marker: PhantomData<T>,
 }
 
-fn goes_on_stack(layout: Layout) -> bool {
+const fn goes_on_stack(layout: Layout) -> bool {
 	layout.size() <= mem::size_of::<*mut ()>() && layout.align() <= mem::align_of::<*mut ()>()
 }
 
 impl<T> Miny<T> {
-	/// construct a new instance
-	pub fn new(val: T) -> Self {
-		unsafe { Self::new_raw(val, |v| v) }
+	/// Construct a new instance from a sized value
+	pub fn new(value: T) -> Self {
+		Self {
+			meta: (),
+			data: if goes_on_stack(Layout::new::<T>()) {
+				let mut data = MaybeUninit::<*mut ()>::uninit();
+				// SAFETY: goes_on_stack determines that the value is small enough & aligned
+				// enough to fit
+				unsafe { ptr::write(data.as_mut_ptr().cast::<T>(), value) };
+				data
+			} else {
+				MaybeUninit::new(Box::into_raw(Box::new(value)).cast::<()>())
+			},
+			marker: PhantomData,
+		}
 	}
-	/// manual [`CoerceUnsized`], convert into an unsized value
-	///
-	/// [`CoerceUnsized`]: core::ops::CoerceUnsized
-	pub fn unsize<U: ?Sized>(self) -> Miny<U>
+	/// Attach the appropriate metadata to turn the value into an unsized value
+	#[inline]
+	pub fn unsize<S: ?Sized>(this: Self) -> Miny<S>
 	where
-		T: Unsize<U>,
+		T: Unsize<S>,
 	{
-		let meta = (&*self as *const U).to_raw_parts().1;
-		let data = self.data;
-		mem::forget(self);
+		// reason: this breaks if i use addr_of!
+		#![allow(clippy::borrow_as_ptr)]
+		let meta = ptr::metadata(&*this as *const S);
+		let data = this.data;
+		mem::forget(this);
 		Miny {
 			meta,
 			data,
-			_marker: PhantomData,
+			marker: PhantomData,
 		}
 	}
-	/// consume the value and return the value
-	pub fn into_inner(mut self) -> T {
-		let mut out = MaybeUninit::<T>::uninit();
-		if self.on_stack() {
-			// SAFETY: out is valid and data is small enough
-			unsafe { ptr::copy_nonoverlapping(self.data.as_ptr().cast(), out.as_mut_ptr(), 1) };
+	/// Shorthand for `Miny::unsize(Miny::new(v))`,
+	/// or `Miny::from(Box::new(v) as S)`
+	#[inline]
+	pub fn new_unsized<S: ?Sized>(value: T) -> Miny<S>
+	where
+		T: Unsize<S>,
+	{
+		Self::unsize(Self::new(value))
+	}
+	/// Consume the `Miny` and take the value out,
+	/// equivalent to box's deref move
+	pub fn into_inner(this: Self) -> T {
+		if goes_on_stack(Layout::new::<T>()) {
+			let data = this.data;
+			mem::forget(this);
+			// SAFETY: stacked data is valid for a single read
+			unsafe { ptr::read(data.as_ptr().cast()) }
 		} else {
-			out.write(*unsafe { Box::from_raw((self.as_mut() as *mut T).cast::<T>()) });
+			// SAFETY: returned false, value is on heap
+			*unsafe { Self::heap_into_box(this) }
 		}
-		mem::forget(self);
-		// SAFETY: we just initialized out in one of two ways
-		unsafe { out.assume_init() }
 	}
 }
 
 impl<T: ?Sized> Miny<T> {
-	/// creates a new instance in fancy internal ways, generally you shouldn't use this
 	/// # Safety
-	/// `unsize` needs to return a reference which points to the same object as the one passed in, most of the time it can be `|v| v`
-	pub unsafe fn new_raw<V>(val: V, unsize: impl FnOnce(&V) -> &T) -> Self {
-		// we always need the metadata
-		let meta = (unsize(&val) as *const T).to_raw_parts().1;
-		if goes_on_stack(Layout::new::<V>()) {
-			let mut data = MaybeUninit::<*mut ()>::uninit();
-			// SAFETY: we just created the data and the value is small enough to fit
-			unsafe { ptr::write(data.as_mut_ptr().cast::<V>(), val) };
-			Self {
-				meta,
-				data,
-				_marker: PhantomData,
-			}
-		} else {
-			let data = MaybeUninit::new(Box::into_raw(Box::new(val)) as *mut ());
-			Self {
-				meta,
-				data,
-				_marker: PhantomData,
-			}
+	/// must be on heap
+	#[inline]
+	unsafe fn heap_into_box(mut this: Self) -> Box<T> {
+		// SAFETY: allocated data is the same as a box
+		let res = unsafe { Box::from_raw(this.as_mut() as *mut T) };
+		mem::forget(this);
+		res
+	}
+	/// Get the layout of the inner value, not really useful for much except for
+	/// maybe some unsafe things.
+	#[inline]
+	pub fn layout(this: &Self) -> Layout {
+		// SAFETY: fine as long as `Layout::for_value_raw` never reads the value, which
+		// it doesn't so far
+		unsafe {
+			Layout::for_value_raw(ptr::from_raw_parts::<T>(
+				NonNull::dangling().as_ptr(),
+				this.meta,
+			))
 		}
 	}
-	/// consume the value and return a box
-	pub fn into_box(mut self) -> Box<T> {
-		let out = if self.on_stack() {
-			let layout = self.layout();
+	/// [`true`] if the value is stored inline on the stack instead of with a
+	/// heap allocation, not really useful for much except for maybe some unsafe
+	/// things or as a diagnostic tool.
+	#[inline]
+	pub fn on_stack(this: &Self) -> bool {
+		goes_on_stack(Self::layout(this))
+	}
+	// we can't impl From<Miny<T>> for Box<T> for fun reasons so instead we get this
+	/// Consume the `Miny` and take the value out as a [`Box`], as opposed to
+	/// [`into_inner`] it also works on unsized values.
+	///
+	/// [`into_inner`]: Self::into_inner
+	pub fn into_box(this: Self) -> Box<T> {
+		if Self::on_stack(&this) {
+			let layout = Self::layout(&this);
 			let data = if layout.size() == 0 {
 				NonNull::dangling()
 			} else {
 				// SAFETY: size is non-zero, also alloc alloc alloc :)
-				NonNull::new(unsafe { alloc::alloc::alloc(self.layout()) })
+				NonNull::new(unsafe { alloc::alloc::alloc(layout) })
 					.unwrap_or_else(|| handle_alloc_error(layout))
 			};
+			let src = this.data.as_ptr().cast::<u8>();
 			// SAFETY: we just allocated the same layout for the value
-			unsafe {
-				ptr::copy_nonoverlapping(
-					self.data.as_ptr().cast::<u8>(),
-					data.as_ptr(),
-					layout.size(),
-				);
-			}
+			unsafe { ptr::copy_nonoverlapping(src, data.as_ptr(), layout.size()) };
+			let meta = this.meta;
+			mem::forget(this);
 			// SAFETY: data was allocated with the global allocator
-			unsafe {
-				Box::from_raw(ptr::from_raw_parts_mut(
-					data.as_ptr().cast::<()>(),
-					self.meta,
-				))
-			}
+			unsafe { Box::from_raw(ptr::from_raw_parts_mut(data.as_ptr().cast(), meta)) }
 		} else {
-			// SAFETY: it's on-heap and that always uses global box
-			unsafe { Box::from_raw(self.as_mut()) }
-		};
-		mem::forget(self);
-		out
-	}
-	/// Returns the layout of the contained value were it to be allocated
-	pub fn layout(&self) -> Layout {
-		// SAFETY: fine as long as `Layout::for_value_raw` never reads the value
-		unsafe {
-			Layout::for_value_raw(ptr::from_raw_parts::<T>(
-				NonNull::dangling().as_ptr(),
-				self.meta,
-			))
-		}
-	}
-	/// `true` if this value is stored inline instead of an allocation
-	pub fn on_stack(&self) -> bool {
-		goes_on_stack(self.layout())
-	}
-}
-/// utilities for any types
-impl<T: ?Sized + Any> Miny<T> {
-	/// gets the [`TypeId`] of the inner type
-	pub fn type_id(&self) -> TypeId {
-		self.as_ref().type_id()
-	}
-	/// returns `true` if the inner type is the same as `T`.
-	pub fn is<V: Any>(&self) -> bool {
-		TypeId::of::<V>() == self.type_id()
-	}
-	/// returns a reference to the inner value
-	/// # Safety
-	/// The contained value must be of type `T`. Calling this method
-	/// with the incorrect type is *undefined behavior*.
-	pub unsafe fn downcast_ref_unchecked<V: Any>(&self) -> &V {
-		debug_assert!(self.is::<V>());
-		&*(self.as_ref() as *const T).cast::<V>()
-	}
-	/// returns a mutable reference to the inner value
-	/// # Safety
-	/// The contained value must be of type `T`. Calling this method
-	/// with the incorrect type is *undefined behavior*.
-	pub unsafe fn downcast_mut_unchecked<V: Any>(&mut self) -> &mut V {
-		debug_assert!(self.is::<V>());
-		&mut *(self.as_mut() as *mut T).cast::<V>()
-	}
-	/// downcasts the value to a concrete type
-	/// # Safety
-	/// The contained value must be of type `T`. Calling this method
-	/// with the incorrect type is *undefined behavior*.
-	pub unsafe fn downcast_unchecked<V: Any>(self) -> V {
-		debug_assert!(self.is::<V>());
-		// cursed as hell
-		let data = self.data;
-		mem::forget(self);
-		Miny::<V> {
-			data,
-			meta: (),
-			_marker: PhantomData,
-		}
-		.into_inner()
-	}
-	/// returns a reference to the inner value if it is of type `T`, or `None`
-	/// if it isn't
-	pub fn downcast_ref<V: Any>(&self) -> Option<&V> {
-		self.is::<V>()
-			.then(|| unsafe { self.downcast_ref_unchecked() })
-	}
-	/// returns a mutable reference to the inner value if it is of type `T`, or
-	/// `None` if it isn't
-	pub fn downcast_mut<V: Any>(&mut self) -> Option<&mut V> {
-		self.is::<V>()
-			.then(|| unsafe { self.downcast_mut_unchecked() })
-	}
-	/// attempts to downcast the value to a concrete type, returning the
-	/// original instance if not
-	pub fn downcast<V: Any>(self) -> Result<V, Self> {
-		if self.is::<V>() {
-			// SAFETY: we just checked that it's a `T
-			Ok(unsafe { self.downcast_unchecked() })
-		} else {
-			Err(self)
+			// SAFETY: returned false, value is already on the heap
+			unsafe { Self::heap_into_box(this) }
 		}
 	}
 }
-impl<T: ?Sized> AsRef<T> for Miny<T> {
-	fn as_ref(&self) -> &T {
-		self
-	}
-}
-impl<T: ?Sized> AsMut<T> for Miny<T> {
-	fn as_mut(&mut self) -> &mut T {
-		self
-	}
-}
-impl<T: ?Sized> core::borrow::Borrow<T> for Miny<T> {
-	fn borrow(&self) -> &T {
-		self
-	}
-}
-impl<T: ?Sized> core::borrow::BorrowMut<T> for Miny<T> {
-	fn borrow_mut(&mut self) -> &mut T {
-		self
-	}
-}
-impl<T: ?Sized> core::ops::Deref for Miny<T> {
+
+impl<T: ?Sized> Deref for Miny<T> {
 	type Target = T;
 	fn deref(&self) -> &Self::Target {
-		let data = if self.on_stack() {
-			(&self.data as *const MaybeUninit<*mut ()>).cast::<()>()
+		let data = if Self::on_stack(self) {
+			self.data.as_ptr().cast::<()>()
 		} else {
-			// SAFETY: on the heap
+			// SAFETY: on the heap, full ptr is used
 			unsafe { self.data.assume_init() }
 		};
-		// SAFETY: slice and dyn have the same layout (for now at least)
+		// SAFETY: valid data and meta
 		unsafe { &*ptr::from_raw_parts(data, self.meta) }
 	}
 }
-impl<T: ?Sized> core::ops::DerefMut for Miny<T> {
+impl<T: ?Sized> DerefMut for Miny<T> {
 	fn deref_mut(&mut self) -> &mut Self::Target {
-		let data = if self.on_stack() {
-			(&mut self.data as *mut MaybeUninit<*mut ()>).cast::<()>()
+		let data = if Self::on_stack(self) {
+			self.data.as_mut_ptr().cast::<()>()
 		} else {
-			// SAFETY: on the heap
+			// SAFETY: on the heap, full ptr is used
 			unsafe { self.data.assume_init() }
 		};
-		// SAFETY: slice and dyn have the same layout (for now at least)
+		// SAFETY: valid data and meta
 		unsafe { &mut *ptr::from_raw_parts_mut(data, self.meta) }
 	}
 }
+
 impl<T: ?Sized> From<Box<T>> for Miny<T> {
-	fn from(val: Box<T>) -> Self {
-		let layout = Layout::for_value(&*val);
-		let (val, meta) = Box::into_raw(val).to_raw_parts();
+	fn from(value: Box<T>) -> Self {
+		let layout = Layout::for_value(&*value);
+		let (val, meta) = Box::into_raw(value).to_raw_parts();
 		if goes_on_stack(layout) {
 			let mut data = MaybeUninit::<*mut ()>::uninit();
+			// using u8 as it's a one-byte value, maybe there's something better for this?
+			let dst = data.as_mut_ptr().cast::<u8>();
 			// SAFETY: we just created the data and the value is small enough to fit
-			unsafe {
-				// using u8 as it's a one-byte value, maybe there's something better for this?
-				ptr::copy_nonoverlapping(
-					val.cast::<u8>(),
-					data.as_mut_ptr().cast::<u8>(),
-					layout.size(),
-				)
-			};
+			unsafe { ptr::copy_nonoverlapping(val.cast::<u8>(), dst, layout.size()) };
 			// SAFETY: box has been consumed already
 			unsafe { alloc::alloc::dealloc(val.cast::<u8>(), layout) };
 			Self {
 				meta,
 				data,
-				_marker: PhantomData,
+				marker: PhantomData,
 			}
 		} else {
-			let data = MaybeUninit::new(val);
 			Self {
 				meta,
-				data,
-				_marker: PhantomData,
+				data: MaybeUninit::new(val),
+				marker: PhantomData,
 			}
-		}
-	}
-}
-impl<T: ?Sized> Drop for Miny<T> {
-	fn drop(&mut self) {
-		if self.on_stack() {
-			// SAFETY: valid value and we don't use it again
-			unsafe { ptr::drop_in_place(self.as_mut()) };
-		} else {
-			// SAFETY: it's an on-heap value
-			drop(unsafe { Box::from_raw(self.as_mut()) });
 		}
 	}
 }
 
-// trait forwards
-impl<T: Clone> Clone for Miny<T> {
-	fn clone(&self) -> Self {
-		Self::new((**self).clone())
-	}
-	fn clone_from(&mut self, source: &Self) {
-		**self = (**source).clone()
-	}
-}
-impl<T: Default> Default for Miny<T> {
-	fn default() -> Self {
-		Self::new(T::default())
-	}
-}
-impl<T: ?Sized + fmt::Debug> fmt::Debug for Miny<T> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		fmt::Debug::fmt(&**self, f)
-	}
-}
-impl<T: ?Sized + fmt::Display> fmt::Display for Miny<T> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		fmt::Display::fmt(&**self, f)
-	}
-}
-impl<T: ?Sized> fmt::Pointer for Miny<T> {
-	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		if self.on_stack() {
-			write!(f, "<stack>")
+impl<T: ?Sized> Drop for Miny<T> {
+	fn drop(&mut self) {
+		if Self::on_stack(self) {
+			// SAFETY: valid value and we don't use it again
+			unsafe { ptr::drop_in_place(self.as_mut()) };
 		} else {
-			fmt::Pointer::fmt(&(&**self as *const T), f)
+			// SAFETY: heap value is equivalent to box
+			drop(unsafe { Box::from_raw(self.as_mut()) });
 		}
 	}
 }
-impl<T: ?Sized + PartialEq> PartialEq for Miny<T> {
-	fn eq(&self, other: &Self) -> bool {
-		**self == **other
-	}
-}
-impl<T: ?Sized + Eq> Eq for Miny<T> {}
-impl<T: ?Sized + PartialOrd> PartialOrd for Miny<T> {
-	fn partial_cmp(&self, other: &Self) -> Option<core::cmp::Ordering> {
-		(**self).partial_cmp(&**other)
-	}
-}
-impl<T: ?Sized + Ord> Ord for Miny<T> {
-	fn cmp(&self, other: &Self) -> core::cmp::Ordering {
-		(**self).cmp(&**other)
-	}
-}
-impl<T: ?Sized + core::hash::Hash> core::hash::Hash for Miny<T> {
-	fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
-		(**self).hash(state)
-	}
-}
-// i have no idea if these are good but box has them and this is pretty much a box so it should be fine
-unsafe impl<T: ?Sized + Sync> Sync for Miny<T> {}
-unsafe impl<T: ?Sized + Send> Send for Miny<T> {}
