@@ -1,0 +1,5 @@
+[toolchain]
+# this is just the version i last used, anything since ~2022 should work
+channel = "nightly-2023-11-27"
+components = ["rust-src", "miri"]
+profile = "minimal"

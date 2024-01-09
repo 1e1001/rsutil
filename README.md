@@ -4,7 +4,7 @@
 [![docs.rs](https://img.shields.io/docsrs/miny)](https://docs.rs/miny)
 [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](#License)
 
-A `Box<T>` with `T` stored inline for values less than a pointer in size.
+A `Box<T>` with `T` stored inline for values less than a pointer in size. Requires **nightly** Rust & `alloc`
 ```rust
 use miny::Miny;
 let small = Miny::new(1_u8);
@@ -21,6 +21,9 @@ assert_eq!(original, [1; 32]);
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 2.0.1
+- Documentation upgrade
+
 ### 2.0.0
 - Redid the entire library to require qualified syntax, because I realized that that's probably a good idea
 
