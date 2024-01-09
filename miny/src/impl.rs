@@ -27,8 +27,8 @@ impl_refs!(as_mut AsMut mut);
 impl_refs!(borrow Borrow);
 impl_refs!(borrow_mut BorrowMut mut);
 
-// TODO: once we get specialization I could probably impl Clone for Miny<T>
-// where Box<T>: Clone
+// TODO: once we get specialization I could probably
+// impl<T> Clone for Miny<T> where Box<T>: Clone & then specialize for normal T
 impl<T: Clone> Clone for Miny<T> {
 	#[inline]
 	fn clone(&self) -> Self {
@@ -47,22 +47,22 @@ impl<T: Default> Default for Miny<T> {
 }
 impl<T: ?Sized + Debug> Debug for Miny<T> {
 	#[inline]
-	fn fmt(&self, f: &mut Formatter) -> FmtResult {
-		Debug::fmt(&**self, f)
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+		Debug::fmt(&**self, fmt)
 	}
 }
 impl<T: ?Sized + Display> Display for Miny<T> {
 	#[inline]
-	fn fmt(&self, f: &mut Formatter) -> FmtResult {
-		Display::fmt(&**self, f)
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
+		Display::fmt(&**self, fmt)
 	}
 }
 impl<T: ?Sized> Pointer for Miny<T> {
-	fn fmt(&self, f: &mut Formatter) -> FmtResult {
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
 		if Self::on_stack(self) {
-			f.write_str("<stack>")
+			fmt.write_str("<stack>")
 		} else {
-			Pointer::fmt(&core::ptr::addr_of!(**self), f)
+			Pointer::fmt(&core::ptr::addr_of!(**self), fmt)
 		}
 	}
 }

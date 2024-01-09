@@ -7,7 +7,7 @@
 //! [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](#LICENSE)
 //!
 //! A [`Miny<T>`][^1] is like a [`Box<T>`] with `T` stored inline for values
-//! less than a pointer in size. Requires nightly Rust[^2] & [`alloc`]
+//! less than a pointer in size. Requires **nightly** Rust[^2] & [`alloc`]
 //!
 //! # Examples
 //! ```
@@ -43,14 +43,21 @@
 //! let small = Miny::from(Box::new([1_u8, 2]) as Box<[u8]>); assert_eq!(small.len(), 2);
 //! ```
 //!
-//! [^1]: The name is because it originally was just a "mini `Box<dyn Any>`", although it supports any type
+//! [^1]:
+//! The name is because it originally was just a "mini `Box<dyn Any>`", although
+//! it supports any type
 //!
-//! [^2]: Uses [`ptr_metadata`], [`layout_for_ptr`], and [`unsize`] features
+//! [^2]:
+//! Uses [`ptr_metadata`] (Reading the metadata pointer & storing it),
+//! [`layout_for_ptr`] (Determining value size without reading the value), and
+//! [`unsize`] ([`new_unsized`] & [`unsize`] functions) features
 //!
-//! [^3]: This is needed because the [`Miny`] layout is [too weird] for
+//! [^3]:
+//! This is needed because the [`Miny`] layout is [too weird] for
 //! [`CoerceUnsized`] to work properly
 //!
 //! [`new_unsized`]: Miny::new_unsized
+//! [`unsize`]: Miny::unsize
 //! [too weird]: ../src/miny/lib.rs.html#79-83
 //! [`CoerceUnsized`]: core::ops::CoerceUnsized
 //! [`ptr_metadata`]: <https://github.com/rust-lang/rust/issues/81513>
@@ -71,7 +78,7 @@ use alloc::boxed::Box;
 #[cfg(test)]
 mod tests;
 
-mod impls;
+mod r#impl;
 
 /// [`Box<T>`] but with small data stored inline
 ///
@@ -105,6 +112,7 @@ impl<T> Miny<T> {
 	}
 	/// Attach the appropriate metadata to turn the value into an unsized value
 	#[inline]
+	#[must_use]
 	pub fn unsize<S: ?Sized>(this: Self) -> Miny<S>
 	where
 		T: Unsize<S>,
@@ -123,6 +131,7 @@ impl<T> Miny<T> {
 	/// Shorthand for `Miny::unsize(Miny::new(v))`,
 	/// or `Miny::from(Box::new(v) as S)`
 	#[inline]
+	#[must_use]
 	pub fn new_unsized<S: ?Sized>(value: T) -> Miny<S>
 	where
 		T: Unsize<S>,
@@ -131,6 +140,7 @@ impl<T> Miny<T> {
 	}
 	/// Consume the `Miny` and take the value out,
 	/// equivalent to box's deref move
+	#[must_use]
 	pub fn into_inner(this: Self) -> T {
 		if goes_on_stack(Layout::new::<T>()) {
 			let data = this.data;
