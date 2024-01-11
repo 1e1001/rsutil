@@ -22,7 +22,7 @@
 //! let original = Miny::into_inner(large);
 //! assert_eq!(original, [1; 32]);
 //! ```
-//! To use unsized values, call [`Miny::unsize`] with a type or use the
+//! To use unsized values, call [`unsize`] with a type or use the
 //! [`new_unsized`] shorthand[^3]
 //! ```
 //! # use miny::Miny;
@@ -50,7 +50,7 @@
 //! [^2]:
 //! Uses [`ptr_metadata`] (Reading the metadata pointer & storing it),
 //! [`layout_for_ptr`] (Determining value size without reading the value), and
-//! [`unsize`] ([`new_unsized`] & [`unsize`] functions) features
+//! [`unsize`](https://github.com/rust-lang/rust/issues/18598) (`new_unsized` & `unsize` functions) features
 //!
 //! [^3]:
 //! This is needed because the [`Miny`] layout is [too weird] for
@@ -59,10 +59,9 @@
 //! [`new_unsized`]: Miny::new_unsized
 //! [`unsize`]: Miny::unsize
 //! [too weird]: ../src/miny/lib.rs.html#79-83
-//! [`CoerceUnsized`]: core::ops::CoerceUnsized
-//! [`ptr_metadata`]: <https://github.com/rust-lang/rust/issues/81513>
-//! [`layout_for_ptr`]: <https://github.com/rust-lang/rust/issues/69835>
-//! [`unsize`]: <https://github.com/rust-lang/rust/issues/18598>
+//! [`ptr_metadata`]: https://github.com/rust-lang/rust/issues/81513
+//! [`layout_for_ptr`]: https://github.com/rust-lang/rust/issues/69835
+//! [`CoerceUnsized`]: https://doc.rust-lang.org/nightly/core/ops/trait.CoerceUnsized.html
 
 use core::alloc::Layout;
 use core::marker::{PhantomData, Unsize};
