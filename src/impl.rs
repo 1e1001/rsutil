@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! trait forwards, in a module to not mess up the imports
 //! because i need somewhere to put this, here's the readme:
 #![doc = include_str!("../README.md")]
