@@ -21,6 +21,9 @@ assert_eq!(original, [1; 32]);
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 2.0.2
+- Account for changes in ptr api's
+
 ### 2.0.1
 - Documentation upgrade
 

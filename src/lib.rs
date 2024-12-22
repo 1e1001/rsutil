@@ -116,9 +116,7 @@ impl<T> Miny<T> {
 	where
 		T: Unsize<S>,
 	{
-		// reason: this breaks if i use addr_of!
-		#![allow(clippy::borrow_as_ptr)]
-		let meta = ptr::metadata(&*this as *const S);
+		let meta = ptr::metadata(ptr::from_ref::<S>(&*this));
 		let data = this.data;
 		mem::forget(this);
 		Miny {
@@ -159,7 +157,7 @@ impl<T: ?Sized> Miny<T> {
 	#[inline]
 	unsafe fn heap_into_box(mut this: Self) -> Box<T> {
 		// SAFETY: allocated data is the same as a box
-		let res = unsafe { Box::from_raw(this.as_mut() as *mut T) };
+		let res = unsafe { Box::from_raw(ptr::from_mut(this.as_mut())) };
 		mem::forget(this);
 		res
 	}
@@ -169,12 +167,7 @@ impl<T: ?Sized> Miny<T> {
 	pub fn layout(this: &Self) -> Layout {
 		// SAFETY: fine as long as `Layout::for_value_raw` never reads the value, which
 		// it doesn't so far
-		unsafe {
-			Layout::for_value_raw(ptr::from_raw_parts::<T>(
-				NonNull::dangling().as_ptr(),
-				this.meta,
-			))
-		}
+		unsafe { Layout::for_value_raw(ptr::from_raw_parts::<T>(ptr::null::<()>(), this.meta)) }
 	}
 	/// [`true`] if the value is stored inline on the stack instead of with a
 	/// heap allocation, not really useful for much except for maybe some unsafe
@@ -204,7 +197,7 @@ impl<T: ?Sized> Miny<T> {
 			let meta = this.meta;
 			mem::forget(this);
 			// SAFETY: data was allocated with the global allocator
-			unsafe { Box::from_raw(ptr::from_raw_parts_mut(data.as_ptr().cast(), meta)) }
+			unsafe { Box::from_raw(ptr::from_raw_parts_mut(data.as_ptr(), meta)) }
 		} else {
 			// SAFETY: returned false, value is already on the heap
 			unsafe { Self::heap_into_box(this) }
