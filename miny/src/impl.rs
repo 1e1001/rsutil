@@ -8,7 +8,7 @@ use core::cmp::Ordering;
 use core::fmt::{Debug, Display, Formatter, Pointer, Result as FmtResult};
 use core::hash::{Hash, Hasher};
 use core::marker::PhantomData;
-use core::mem;
+use core::{mem, ptr};
 
 use crate::Miny;
 macro_rules! impl_refs {
@@ -111,7 +111,7 @@ impl<T: ?Sized + Any> Miny<T> {
 	/// with the incorrect type is *undefined behavior*.
 	pub unsafe fn downcast_ref_unchecked<V: Any>(&self) -> &V {
 		debug_assert!(self.is::<V>(), "unchecked cast was wrong!");
-		&*(self.as_ref() as *const T).cast::<V>()
+		&*ptr::from_ref(self.as_ref()).cast::<V>()
 	}
 	/// Returns a mutable reference to the inner value
 	/// # Safety
@@ -119,7 +119,7 @@ impl<T: ?Sized + Any> Miny<T> {
 	/// with the incorrect type is *undefined behavior*.
 	pub unsafe fn downcast_mut_unchecked<V: Any>(&mut self) -> &mut V {
 		debug_assert!(self.is::<V>(), "unchecked cast was wrong!");
-		&mut *(self.as_mut() as *mut T).cast::<V>()
+		&mut *ptr::from_mut(self.as_mut()).cast::<V>()
 	}
 	/// Downcasts the value to a concrete type
 	/// # Safety
