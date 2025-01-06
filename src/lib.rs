@@ -237,12 +237,19 @@ impl<T: ?Sized> From<Box<T>> for Miny<T> {
 		let (val, meta) = Box::into_raw(value).to_raw_parts();
 		if goes_on_stack(layout) {
 			let mut data = MaybeUninit::<*mut ()>::uninit();
-			// using u8 as it's a one-byte value, maybe there's something better for this?
-			let dst = data.as_mut_ptr().cast::<u8>();
-			// SAFETY: we just created the data and the value is small enough to fit
-			unsafe { ptr::copy_nonoverlapping(val.cast::<u8>(), dst, layout.size()) };
-			// SAFETY: box has been consumed already
-			unsafe { alloc::alloc::dealloc(val.cast::<u8>(), layout) };
+			// If the value is zero-sized, Box just uses NonNull::dangling(), so the val
+			// pointer was not "allocated by this allocator" (see safety notes on
+			// [alloc::alloc::GlobalAlloc::dealloc]) as std just uses
+			// NonNull::dangling(). See e.g. the implementation of
+			// [Box::try_new_uninit_slice_in]. So we must avoid calling dealloc.
+			if layout.size() != 0 {
+				// using u8 as it's a one-byte value, maybe there's something better for this?
+				let dst = data.as_mut_ptr().cast::<u8>();
+				// SAFETY: we just created the data and the value is small enough to fit
+				unsafe { ptr::copy_nonoverlapping(val.cast::<u8>(), dst, layout.size()) };
+				// SAFETY: box has been consumed so won't be dropped, and val was allocated
+				unsafe { alloc::alloc::dealloc(val.cast::<u8>(), layout) };
+			}
 			Self {
 				meta,
 				data,
