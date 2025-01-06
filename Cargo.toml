@@ -12,6 +12,10 @@ documentation = "https://docs.rs/miny"
 homepage = "https://github.com/1e1001/miny"
 repository = "https://github.com/1e1001/miny"
 
+[dependencies]
+# impl Allocative for Miny
+allocative = { version = "0.3", optional = true }
+
 # these lints are just copied off of another project, maybe this list should be cleaned up at some point
 [lints.rust]
 missing_docs = "deny"

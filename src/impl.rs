@@ -161,3 +161,32 @@ impl<T: ?Sized + Any> Miny<T> {
 		}
 	}
 }
+
+#[cfg(feature = "allocative")]
+impl<T> allocative::Allocative for Miny<T>
+where
+	T: ?Sized + allocative::Allocative,
+{
+	fn visit<'a, 'b: 'a>(&self, visitor: &'a mut allocative::Visitor<'b>) {
+		let mut visitor = visitor.enter_self_sized::<Self>();
+		let meta_size = mem::size_of_val(&self.meta);
+		if meta_size != 0 {
+			visitor.visit_field_with(allocative::Key::new("meta"), meta_size, |_| {});
+		}
+		if Self::on_stack(self) {
+			visitor.visit_field_with(
+				allocative::Key::new("inline"),
+				mem::size_of::<*const ()>(),
+				|visitor| T::visit(&self, visitor),
+			);
+		} else {
+			// The ptr size is for a thin pointer as we already visited the metadata.
+			// The impl for Box uses a fat pointer (*const T) but it would be confusing
+			// if this differed between stack vs heap-allocated Miny.
+			let mut visitor =
+				visitor.enter_unique(allocative::Key::new("ptr"), mem::size_of::<*const ()>());
+			T::visit(self, &mut visitor);
+		}
+		visitor.exit();
+	}
+}
