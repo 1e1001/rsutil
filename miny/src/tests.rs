@@ -68,3 +68,11 @@ fn with_zst() {
 	assert!(Miny::into_box(fake).is::<()>());
 	assert_eq!(Miny::into_box(real), Box::new(()));
 }
+
+#[test]
+fn zst_from_box() {
+	let boxed = Box::new(());
+	let min = core::hint::black_box(Miny::from(boxed));
+	// Should not dealloc
+	drop(min);
+}
