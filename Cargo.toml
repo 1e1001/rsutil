@@ -1,0 +1,62 @@
+[workspace]
+resolver = "2"
+members = [
+	"iter-debug",
+	"miny",
+	"punch-card",
+]
+[workspace.lints.rust]
+missing_docs = "deny"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(rust_analyzer)'] }
+
+[workspace.lints.clippy]
+# pedantic
+pedantic = { level = "warn", priority = -1 }
+must_use_candidate = "allow"
+similar_names = "allow"
+allow_attributes_without_reason = "deny"
+
+# restriction
+absolute_paths = "warn"
+alloc_instead_of_core = "warn"
+allow_attributes = "warn"
+as_underscore = "warn"
+assertions_on_result_states = "warn"
+clone_on_ref_ptr = "warn"
+dbg_macro = "warn"
+default_union_representation = "warn"
+empty_drop = "warn"
+empty_structs_with_brackets = "warn"
+filetype_is_file = "warn"
+fn_to_numeric_cast_any = "warn"
+format_push_string = "warn"
+get_unwrap = "warn"
+if_then_some_else_none = "warn"
+impl_trait_in_params = "warn"
+missing_assert_message = "warn"
+missing_asserts_for_indexing = "warn"
+multiple_inherent_impl = "warn"
+multiple_unsafe_ops_per_block = "warn"
+mutex_atomic = "warn"
+panic_in_result_fn = "warn"
+print_stderr = "warn"
+print_stdout = "warn"
+pub_without_shorthand = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+redundant_type_annotations = "warn"
+rest_pat_in_fully_bound_structs = "warn"
+semicolon_outside_block = "warn"
+shadow_unrelated = "warn"
+single_char_lifetime_names = "warn"
+str_to_string = "warn"
+string_to_string = "warn"
+tests_outside_test_module = "warn"
+todo = "warn"
+try_err = "warn"
+undocumented_unsafe_blocks = "warn"
+unnecessary_safety_comment = "warn"
+unnecessary_safety_doc = "warn"
+unneeded_field_pattern = "warn"
+unseparated_literal_suffix = "warn"
+unwrap_in_result = "warn"

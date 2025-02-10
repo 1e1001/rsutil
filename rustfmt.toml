@@ -1,0 +1,8 @@
+style_edition = "2024"
+hard_tabs = true
+wrap_comments = true
+hex_literal_case = "Upper"
+imports_granularity = "Module"
+overflow_delimited_expr = true
+group_imports = "StdExternalCrate"
+fn_single_line = true

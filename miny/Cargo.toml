@@ -1,6 +1,6 @@
 [package]
 name = "miny"
-version = "2.0.2"
+version = "2.0.3"
 edition = "2021"
 authors = ["1e1001"]
 description = "Box<T> with small value optimization"
@@ -9,38 +9,8 @@ readme = "README.md"
 keywords = ["box", "dst", "stack"]
 categories = ["data-structures", "no-std"]
 documentation = "https://docs.rs/miny"
-homepage = "https://github.com/1e1001/miny"
-repository = "https://github.com/1e1001/miny"
+homepage = "https://github.com/1e1001/rsutil/tree/main/miny"
+repository = "https://github.com/1e1001/rsutil/tree/main/miny"
 
-# these lints are just copied off of another project, maybe this list should be cleaned up at some point
-[lints.rust]
-missing_docs = "deny"
-
-[lints.clippy]
-# pedantic
-pedantic = {level = "warn", priority = -1}
-must_use_candidate = "allow"
-missing_errors_doc = "allow"
-
-# restriction
-alloc_instead_of_core = "warn"
-as_underscore = "warn"
-dbg_macro = "warn"
-default_union_representation = "warn"
-if_then_some_else_none = "warn"
-impl_trait_in_params = "warn"
-min_ident_chars = "warn"
-missing_assert_message = "warn"
-missing_asserts_for_indexing = "warn"
-multiple_inherent_impl = "warn"
-multiple_unsafe_ops_per_block = "warn"
-redundant_type_annotations = "warn"
-semicolon_outside_block = "warn"
-shadow_unrelated = "warn"
-single_char_lifetime_names = "warn"
-tests_outside_test_module = "warn"
-todo = "warn"
-undocumented_unsafe_blocks = "warn"
-unnecessary_safety_comment = "warn"
-unnecessary_safety_doc = "warn"
-unseparated_literal_suffix = "warn"
+[lints]
+workspace = true

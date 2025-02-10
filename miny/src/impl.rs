@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! trait forwards, in a module to not mess up the imports
-//! because i need somewhere to put this, here's the readme:
-#![doc = include_str!("../README.md")]
 use core::any::{Any, TypeId};
 use core::borrow::{Borrow, BorrowMut};
 use core::cmp::Ordering;
@@ -31,31 +29,21 @@ impl_refs!(borrow_mut BorrowMut mut);
 // impl<T> Clone for Miny<T> where Box<T>: Clone & then specialize for normal T
 impl<T: Clone> Clone for Miny<T> {
 	#[inline]
-	fn clone(&self) -> Self {
-		Self::new((**self).clone())
-	}
+	fn clone(&self) -> Self { Self::new((**self).clone()) }
 	#[inline]
-	fn clone_from(&mut self, source: &Self) {
-		(**self).clone_from(source);
-	}
+	fn clone_from(&mut self, source: &Self) { (**self).clone_from(source); }
 }
 impl<T: Default> Default for Miny<T> {
 	#[inline]
-	fn default() -> Self {
-		Self::new(T::default())
-	}
+	fn default() -> Self { Self::new(T::default()) }
 }
 impl<T: ?Sized + Debug> Debug for Miny<T> {
 	#[inline]
-	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-		Debug::fmt(&**self, fmt)
-	}
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult { Debug::fmt(&**self, fmt) }
 }
 impl<T: ?Sized + Display> Display for Miny<T> {
 	#[inline]
-	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
-		Display::fmt(&**self, fmt)
-	}
+	fn fmt(&self, fmt: &mut Formatter) -> FmtResult { Display::fmt(&**self, fmt) }
 }
 impl<T: ?Sized> Pointer for Miny<T> {
 	fn fmt(&self, fmt: &mut Formatter) -> FmtResult {
@@ -68,28 +56,20 @@ impl<T: ?Sized> Pointer for Miny<T> {
 }
 impl<T: ?Sized + PartialEq> PartialEq for Miny<T> {
 	#[inline]
-	fn eq(&self, other: &Self) -> bool {
-		(**self).eq(&**other)
-	}
+	fn eq(&self, other: &Self) -> bool { (**self).eq(&**other) }
 }
 impl<T: ?Sized + Eq> Eq for Miny<T> {}
 impl<T: ?Sized + PartialOrd> PartialOrd for Miny<T> {
 	#[inline]
-	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-		(**self).partial_cmp(&**other)
-	}
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> { (**self).partial_cmp(&**other) }
 }
 impl<T: ?Sized + Ord> Ord for Miny<T> {
 	#[inline]
-	fn cmp(&self, other: &Self) -> Ordering {
-		(**self).cmp(&**other)
-	}
+	fn cmp(&self, other: &Self) -> Ordering { (**self).cmp(&**other) }
 }
 impl<T: ?Sized + Hash> Hash for Miny<T> {
 	#[inline]
-	fn hash<H: Hasher>(&self, state: &mut H) {
-		(**self).hash(state);
-	}
+	fn hash<H: Hasher>(&self, state: &mut H) { (**self).hash(state); }
 }
 // TODO: maybe add a check that <P as Pointee>::Metadata is also thread-safe?
 // SAFETY: should be fine, a reference to the thing should never observe any
@@ -102,9 +82,7 @@ unsafe impl<T: ?Sized + Send> Send for Miny<T> {}
 impl<T: ?Sized + Any> Miny<T> {
 	/// Returns `true` if the inner type is the same as `T`.
 	#[inline]
-	pub fn is<V: Any>(&self) -> bool {
-		TypeId::of::<V>() == (**self).type_id()
-	}
+	pub fn is<V: Any>(&self) -> bool { TypeId::of::<V>() == (**self).type_id() }
 	/// Returns a reference to the inner value
 	/// # Safety
 	/// The contained value must be of type `T`. Calling this method
@@ -152,6 +130,7 @@ impl<T: ?Sized + Any> Miny<T> {
 	}
 	/// Attempts to downcast the value to a concrete type, returning the
 	/// original instance if not
+	#[expect(clippy::missing_errors_doc, reason = "obvious implementation")]
 	pub fn downcast<V: Any>(self) -> Result<V, Self> {
 		if self.is::<V>() {
 			// SAFETY: asserted type matches

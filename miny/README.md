@@ -1,5 +1,5 @@
 # miny
-[![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/miny)
+[![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/rsutil/tree/main/miny)
 [![Crates.io](https://img.shields.io/crates/v/miny)](https://crates.io/crates/miny)
 [![docs.rs](https://img.shields.io/docsrs/miny)](https://docs.rs/miny)
 [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](#License)
@@ -21,8 +21,12 @@ assert_eq!(original, [1; 32]);
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 2.0.3
+- Don't try to deallocate ZSTs when converting from a `Box` [(thanks, Cormac!)](https://github.com/1e1001/rsutil/pull/1)
+- `rsutil` merge documentation overhaul
+
 ### 2.0.2
-- Account for changes in ptr api's
+- Account for changes in `ptr` API's
 
 ### 2.0.1
 - Documentation upgrade
@@ -34,7 +38,7 @@ For more information, [read the docs](https://docs.rs/miny).
 - Initial release
 
 ## License
-[MIT](./LICENSE-MIT) or [Apache 2.0](./LICENSE-APACHE)
+[MIT](../LICENSE-MIT) or [Apache 2.0](../LICENSE-APACHE)
 
 
 <sub>(also hi please give me suggestions for more features to add, this crate feels kinda small)</sub>

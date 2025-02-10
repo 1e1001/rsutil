@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 use alloc::boxed::Box;
 use core::any::Any;
+use core::hint::black_box;
 
 use crate::Miny;
 
@@ -72,7 +73,7 @@ fn with_zst() {
 #[test]
 fn zst_from_box() {
 	let boxed = Box::new(());
-	let min = core::hint::black_box(Miny::from(boxed));
+	let min = black_box(Miny::from(boxed));
 	// Should not dealloc
 	drop(min);
 }

@@ -1,9 +1,16 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Tests and the like
+#![expect(
+	clippy::unreadable_literal,
+	reason = "bit more than the literals are unreadable here…"
+)]
 
 extern crate test;
 
-use test::{black_box, Bencher};
+use core::mem::transmute;
+use core::str::from_utf8;
+
+use test::{Bencher, black_box};
 
 use crate::PunchCard;
 
@@ -12,7 +19,7 @@ use crate::PunchCard;
 fn string_decode() {
 	#[rustfmt::skip]
 	assert_eq!(
-		core::str::from_utf8(
+		from_utf8(
 			&(
 				.. .. .. .. .. .. .. .. .. .. .. .. .. .. ..,
 				..=..=..=..=..=.. .. ..=..=..=..=..=.. .. ..,
@@ -65,7 +72,7 @@ fn struct_decode() {
 		.. ..=.. ..=.. ..=..=..=.. .. ..=..=..=..=.. .. ..,
 	).punch_card();
 	// safety: these are all integers so any bit combination is valid
-	let output: Output = unsafe {core::mem::transmute(data)};
+	let output: Output = unsafe { transmute(data) };
 	assert_eq!(output, Output {
 		a: [10947123, 517895, 1813],
 		b: 12908,
@@ -124,7 +131,7 @@ fn valid_u8_1() {
 
 /// line 0 was used in older versions as the source of truth, that's a bad idea
 #[test]
-#[should_panic]
+#[should_panic = "mismatched tape lengths"]
 fn invalid_u8_0() {
 	#[rustfmt::skip]
 	(
@@ -141,7 +148,7 @@ fn invalid_u8_0() {
 
 /// in said older versions the other lines would be padded with zeros
 #[test]
-#[should_panic]
+#[should_panic = "mismatched tape lengths"]
 fn invalid_u8_1() {
 	#[rustfmt::skip]
 	(
@@ -303,6 +310,7 @@ fn valid_u64() {
 }
 
 #[rustfmt::skip]
+#[expect(clippy::too_many_lines, reason = "just look a it")]
 fn massive_card() -> [u128; 256] {
 	(
 		.. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. .. ..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..=..,
@@ -465,5 +473,5 @@ fn massive_bench(b: &mut Bencher) {
 		for _ in 1..100 {
 			black_box(massive_card());
 		}
-	})
+	});
 }

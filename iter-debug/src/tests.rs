@@ -1,8 +1,8 @@
 extern crate core;
 
-use core::fmt::{Result, Write};
+use core::fmt::{self, Result, Write};
 use core::option::Option;
-use core::{panic, write};
+use core::write;
 
 use crate::{DebugIterator, IterDebug};
 
@@ -11,7 +11,7 @@ struct MatchStr<'str>(&'str str);
 impl Write for MatchStr<'_> {
 	fn write_str(&mut self, text: &str) -> Result {
 		let Option::Some(new) = self.0.strip_prefix(text) else {
-			panic!("Textual mismatch!");
+			return Result::Err(fmt::Error);
 		};
 		self.0 = new;
 		Result::Ok(())

@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 #![feature(ptr_metadata, layout_for_ptr, unsize)]
 #![no_std]
-//! [![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/miny)
+//! [![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/rsutil/tree/main/miny)
 //! [![Crates.io](https://img.shields.io/crates/v/miny)](https://crates.io/crates/miny)
 //! [![docs.rs](https://img.shields.io/docsrs/miny)](https://docs.rs/miny)
-//! [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](#LICENSE)
+//! [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](https://github.com/1e1001/rsutil/blob/main/miny/README.md#License)
 //!
 //! A [`Miny<T>`][^1] is like a [`Box<T>`] with `T` stored inline for values
-//! less than a pointer in size. Requires **nightly** Rust[^2] & [`alloc`]
+//! less than a pointer in size. Requires **nightly** Rust[^2] & [`mod@alloc`]
 //!
 //! # Examples
-//! ```
+//! ```rust
 //! # use miny::Miny;
 //! let small = Miny::new(1_u8);
 //! let large = Miny::new([1_usize; 32]);
@@ -24,7 +24,7 @@
 //! ```
 //! To use unsized values, call [`unsize`] with a type or use the
 //! [`new_unsized`] shorthand[^3]
-//! ```
+//! ```rust
 //! # use miny::Miny;
 //! let value = Miny::new_unsized::<[usize]>([1_usize; 32]);
 //! // it's usable as a [usize]
@@ -34,7 +34,7 @@
 //! assert_eq!(boxed, Box::new([1_usize; 32]) as Box<[usize]>);
 //! ```
 //! Or if you have a box you can directly convert it into a [`Miny`]
-//! ```
+//! ```rust
 //! # use miny::Miny;
 //! let large = Miny::from(Box::new([1_usize; 32]) as Box<[usize]>);
 //! assert_eq!(large.len(), 32);
@@ -43,17 +43,14 @@
 //! let small = Miny::from(Box::new([1_u8, 2]) as Box<[u8]>); assert_eq!(small.len(), 2);
 //! ```
 //!
-//! [^1]:
-//! The name is because it originally was just a "mini `Box<dyn Any>`", although
+//! [^1]: The name is because it originally was just a "mini `Box<dyn Any>`", although
 //! it supports any type
 //!
-//! [^2]:
-//! Uses [`ptr_metadata`] (Reading the metadata pointer & storing it),
+//! [^2]: Uses [`ptr_metadata`] (Reading the metadata pointer & storing it),
 //! [`layout_for_ptr`] (Determining value size without reading the value), and
 //! [`unsize`](https://github.com/rust-lang/rust/issues/18598) (`new_unsized` & `unsize` functions) features
 //!
-//! [^3]:
-//! This is needed because the [`Miny`] layout is [too weird] for
+//! [^3]: This is needed because the [`Miny`] layout is [too weird] for
 //! [`CoerceUnsized`] to work properly
 //!
 //! [`new_unsized`]: Miny::new_unsized
@@ -71,7 +68,7 @@ use core::ptr::{self, NonNull, Pointee};
 
 extern crate alloc;
 
-use alloc::alloc::handle_alloc_error;
+use alloc::alloc::{alloc, dealloc, handle_alloc_error};
 use alloc::boxed::Box;
 
 #[cfg(test)]
@@ -173,9 +170,7 @@ impl<T: ?Sized> Miny<T> {
 	/// heap allocation, not really useful for much except for maybe some unsafe
 	/// things or as a diagnostic tool.
 	#[inline]
-	pub fn on_stack(this: &Self) -> bool {
-		goes_on_stack(Self::layout(this))
-	}
+	pub fn on_stack(this: &Self) -> bool { goes_on_stack(Self::layout(this)) }
 	// we can't impl From<Miny<T>> for Box<T> for fun reasons so instead we get this
 	/// Consume the `Miny` and take the value out as a [`Box`], as opposed to
 	/// [`into_inner`] it also works on unsized values.
@@ -187,9 +182,8 @@ impl<T: ?Sized> Miny<T> {
 			let data = if layout.size() == 0 {
 				NonNull::dangling()
 			} else {
-				// SAFETY: size is non-zero, also alloc alloc alloc :)
-				NonNull::new(unsafe { alloc::alloc::alloc(layout) })
-					.unwrap_or_else(|| handle_alloc_error(layout))
+				// SAFETY: size is non-zero
+				NonNull::new(unsafe { alloc(layout) }).unwrap_or_else(|| handle_alloc_error(layout))
 			};
 			let src = this.data.as_ptr().cast::<u8>();
 			// SAFETY: we just allocated the same layout for the value
@@ -239,16 +233,16 @@ impl<T: ?Sized> From<Box<T>> for Miny<T> {
 			let mut data = MaybeUninit::<*mut ()>::uninit();
 			// If the value is zero-sized, Box just uses NonNull::dangling(), so the val
 			// pointer was not "allocated by this allocator" (see safety notes on
-			// [alloc::alloc::GlobalAlloc::dealloc]) as std just uses
-			// NonNull::dangling(). See e.g. the implementation of
-			// [Box::try_new_uninit_slice_in]. So we must avoid calling dealloc.
+			// GlobalAlloc::dealloc) as std just uses NonNull::dangling(). See e.g. the
+			// implementation of Box::try_new_uninit_slice_in. So we must avoid calling
+			// dealloc.
 			if layout.size() != 0 {
 				// using u8 as it's a one-byte value, maybe there's something better for this?
 				let dst = data.as_mut_ptr().cast::<u8>();
 				// SAFETY: we just created the data and the value is small enough to fit
 				unsafe { ptr::copy_nonoverlapping(val.cast::<u8>(), dst, layout.size()) };
 				// SAFETY: box has been consumed so won't be dropped, and val was allocated
-				unsafe { alloc::alloc::dealloc(val.cast::<u8>(), layout) };
+				unsafe { dealloc(val.cast::<u8>(), layout) };
 			}
 			Self {
 				meta,

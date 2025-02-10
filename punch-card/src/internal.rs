@@ -1,12 +1,13 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: MIT OR Apache-2.0
 //! Internal implementation stuff kept separate for some reason.
 
 use core::ops::{RangeFull, RangeTo, RangeToInclusive};
 
 /// A single line (or tail of a line) in a punched card.
 ///
-/// Lines are typed like a linked list, for example the type of the tape in the `valid_u1_1` test is:
-/// ```no
+/// Lines are typed like a linked list, for example the type of the tape in the
+/// `valid_u1_1` test is:
+/// ```text
 /// ..= RangeToInclusive<
 /// ..   RangeTo<
 /// ..=   RangeToInclusive<
@@ -18,9 +19,9 @@ use core::ops::{RangeFull, RangeTo, RangeToInclusive};
 /// ..=         RangeToInclusive<
 /// ..           RangeFull>>>>>>>>>
 /// ```
-///
 pub trait PunchCardLine {
-	/// Head item / car of the line, [`true`](bool) for [`..=`](RangeToInclusive), [`false`](bool) for [`..=`](RangeTo)
+	/// Head item / car of the line, [`true`](bool) for
+	/// [`..=`](RangeToInclusive), [`false`](bool) for [`..=`](RangeTo)
 	const HEAD: Option<bool>;
 	/// Tail / cdr of the line
 	type Tail: PunchCardLine;
@@ -31,11 +32,13 @@ pub trait PunchCardLine {
 /// Inner punch card type with more things
 /// stored as a parallel linked list
 pub trait PunchCardInner {
-	/// Length of the first line, it's guaranteed to be not equal to all the other lines, otherwise parsing will fail
+	/// Length of the first line, it's guaranteed to be not equal to all the
+	/// other lines, otherwise parsing will fail
 	const LENGTH: usize;
 	/// The output type of one entry, usually an integer of some kind.
 	type Output: Copy + Default;
-	/// Evaluates this section of the card and appends the value onto the output.
+	/// Evaluates this section of the card and appends the value onto the
+	/// output.
 	fn eval_part<const N: usize>(v: &mut [Self::Output; N], i: usize);
 }
 
@@ -66,6 +69,10 @@ impl<T: PunchCardLine> PunchCardInner for T {
 	const LENGTH: usize = T::LENGTH;
 	type Output = bool;
 
+	#[expect(
+		clippy::inline_always,
+		reason = "inlining really affects performance here"
+	)]
 	#[inline(always)]
 	#[track_caller]
 	fn eval_part<const N: usize>(v: &mut [Self::Output; N], i: usize) {
