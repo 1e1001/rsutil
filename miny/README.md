@@ -23,6 +23,7 @@ For more information, [read the docs](https://docs.rs/miny).
 ## Changelog
 ### 2.0.3
 - Don't try to deallocate ZSTs when converting from a `Box` [(thanks, Cormac!)](https://github.com/1e1001/rsutil/pull/1)
+- Documenting invariants more
 - `rsutil` merge documentation overhaul
 
 ### 2.0.2

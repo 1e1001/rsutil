@@ -3,7 +3,9 @@ resolver = "2"
 members = [
 	"iter-debug",
 	"miny",
+	"multiline-logger",
 	"punch-card",
+	"just-kdl",
 ]
 [workspace.lints.rust]
 missing_docs = "deny"

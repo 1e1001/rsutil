@@ -16,6 +16,7 @@ For more information, [read the docs](https://docs.rs/iter-debug).
 
 ## Changelog
 ### 1.0.1
+- Change some testing code
 - `rsutil` merge documentation overhaul
 
 ### 1.0.0

@@ -1,0 +1,39 @@
+[package]
+name = "multiline-logger"
+version = "0.1.0"
+edition = "2021"
+
+# common
+[dependencies.log]
+version = "0.4.25"
+[dependencies.time]
+version = "0.3.37"
+features = ["local-offset"]
+# wasm-specific
+[target.'cfg(target_arch="wasm32")'.dependencies.time]
+version = "0.3.37"
+features = ["local-offset", "wasm-bindgen"]
+[target.'cfg(target_arch="wasm32")'.dependencies.wasm-bindgen]
+version = "0.2.100"
+# native-specific
+[target.'cfg(not(target_arch="wasm32"))'.dependencies.termcolor]
+version = "1.4.1"
+[target.'cfg(not(target_arch="wasm32"))'.dependencies.backtrace]
+version = "0.3.74"
+optional = true
+[target.'cfg(not(target_arch="wasm32"))'.dependencies.color-backtrace]
+version = "0.7.0"
+optional = true
+# windows-specific
+[target.'cfg(windows)'.dependencies.windows-sys]
+version = "0.59.0"
+features = ["Win32_Foundation", "Win32_System_Console"]
+
+[features]
+# TODO: consider a wasm-bindgen/"web" feature? makes the dependencies look more shitty (since some dependencies are intersections)
+
+# enable backtrace capturing
+backtrace = ["dep:backtrace", "dep:color-backtrace"]
+
+[lints]
+workspace = true

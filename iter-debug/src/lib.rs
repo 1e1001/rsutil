@@ -60,8 +60,8 @@ where
 /// Helper trait that lets you `.debug()` an iterator, like the other
 /// combinators.
 ///
-/// Automatically implemented for all [`IntoIterator`] where the item
-/// is [`Debug`].
+/// Automatically implemented for all [`IntoIterator`] with [`Debug`]-able
+/// items.
 pub trait DebugIterator {
 	/// Convert this iterator into an [`IterDebug`] for printing
 	fn debug(self) -> IterDebug<Self>

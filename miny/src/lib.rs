@@ -61,7 +61,7 @@
 //! [`CoerceUnsized`]: https://doc.rust-lang.org/nightly/core/ops/trait.CoerceUnsized.html
 
 use core::alloc::Layout;
-use core::marker::{PhantomData, Unsize};
+use core::marker::{PhantomData, Sized, Unsize};
 use core::mem::{self, MaybeUninit};
 use core::ops::{Deref, DerefMut};
 use core::ptr::{self, NonNull, Pointee};

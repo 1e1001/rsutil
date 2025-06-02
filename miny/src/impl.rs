@@ -71,9 +71,8 @@ impl<T: ?Sized + Hash> Hash for Miny<T> {
 	#[inline]
 	fn hash<H: Hasher>(&self, state: &mut H) { (**self).hash(state); }
 }
-// TODO: maybe add a check that <P as Pointee>::Metadata is also thread-safe?
-// SAFETY: should be fine, a reference to the thing should never observe any
-// funky things
+// SAFETY: pointee metadata is Send + Sync,
+// the only time the pointer/inline can change is if it's mutable
 unsafe impl<T: ?Sized + Sync> Sync for Miny<T> {}
 // SAFETY: should be fine, ownership is passed along with the pointer / value
 unsafe impl<T: ?Sized + Send> Send for Miny<T> {}
