@@ -50,12 +50,11 @@
 //! [`layout_for_ptr`] (Determining value size without reading the value), and
 //! [`unsize`](https://github.com/rust-lang/rust/issues/18598) (`new_unsized` & `unsize` functions) features
 //!
-//! [^3]: This is needed because the [`Miny`] layout is [too weird] for
+//! [^3]: This is needed because the [`Miny`] layout is too weird for
 //! [`CoerceUnsized`] to work properly
 //!
 //! [`new_unsized`]: Miny::new_unsized
 //! [`unsize`]: Miny::unsize
-//! [too weird]: ../src/miny/lib.rs.html#79-83
 //! [`ptr_metadata`]: https://github.com/rust-lang/rust/issues/81513
 //! [`layout_for_ptr`]: https://github.com/rust-lang/rust/issues/69835
 //! [`CoerceUnsized`]: https://doc.rust-lang.org/nightly/core/ops/trait.CoerceUnsized.html
