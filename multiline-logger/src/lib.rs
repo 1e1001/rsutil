@@ -14,7 +14,7 @@
 //! - Looks very nice (in my opinion)
 //!
 //! | Platform | Console output | File output | Backtraces |
-//! |-:|-|:-:|-|-|
+//! |-:|-|:-:|-|
 //! | Native | `stderr` (colored!) | &check; | `backtrace` feature |
 //! | Web | web `console` (colored!) | &cross; | `backtrace` feature |
 //!
