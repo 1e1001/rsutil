@@ -2,6 +2,15 @@
 name = "just-kdl"
 version = "0.1.0"
 edition = "2024"
+authors = ["1e1001"]
+description = "Small streaming KDL parser"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = ["document", "kdl", "serialization"]
+categories = ["parser-implementations", "config", "encoding"]
+documentation = "https://docs.rs/just-kdl"
+homepage = "https://github.com/1e1001/rsutil/tree/main/just-kdl"
+repository = "https://github.com/1e1001/rsutil/tree/main/just-kdl"
 
 [dependencies.thiserror]
 version = "2.0.11"
