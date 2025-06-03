@@ -2,7 +2,7 @@
 Collection of Rust utility libraries, some more useful than others.
 
 | Name | Things | Description |
-|-:|-|:-
+|-|-|-
 |[`iter-debug`](./iter-debug/)|[![Crates.io](https://img.shields.io/crates/v/iter-debug)](https://crates.io/crates/iter-debug) [![docs.rs](https://img.shields.io/docsrs/iter-debug)](https://docs.rs/iter-debug) [![MIT OR Apache-2.0](https://img.shields.io/crates/l/iter-debug)](#License)| debugging iterators like arrays. |
 |[`just-kdl`](./just-kdl/)|[![Crates.io](https://img.shields.io/crates/v/just-kdl)](https://crates.io/crates/just-kdl) [![docs.rs](https://img.shields.io/docsrs/just-kdl)](https://docs.rs/just-kdl) [![MIT OR Apache-2.0](https://img.shields.io/crates/l/just-kdl)](https://github.com/1e1001/rsutil/blob/main/just-kdl/README.md#License)| KDL v2.0.0 parser. |
 |[`miny`](./miny/)\*|[![Crates.io](https://img.shields.io/crates/v/miny)](https://crates.io/crates/miny) [![docs.rs](https://img.shields.io/docsrs/miny)](https://docs.rs/miny) [![MIT OR Apache-2.0](https://img.shields.io/crates/l/miny)](#License)|  `Box<T>` with small `T`'s stored inline. |
