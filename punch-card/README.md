@@ -1,5 +1,4 @@
 # punch-card
-
 [![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/rsutil/tree/main/punch-card)
 [![Crates.io](https://img.shields.io/crates/v/punch-card)](https://crates.io/crates/punch-card)
 [![docs.rs](https://img.shields.io/docsrs/punch-card)](https://docs.rs/punch-card)

@@ -1,4 +1,9 @@
 # multiline-logger
+[![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/rsutil/tree/main/multiline-logger)
+[![Crates.io](https://img.shields.io/crates/v/multiline-logger)](https://crates.io/crates/multiline-logger)
+[![docs.rs](https://img.shields.io/docsrs/multiline-logger)](https://docs.rs/multiline-logger)
+[![MIT OR Apache-2.0](https://img.shields.io/crates/l/multiline-logger)](https://github.com/1e1001/rsutil/blob/main/multiline-logger/README.md#License)
+
 Fancy lightweight debug output
 
 ```rs
