@@ -7,7 +7,7 @@
 //! Small streaming [KDL] v2.0.0 parser
 //!
 //! Designed for reasonable performance and memory efficiency, at the expense
-//! (or benefit, depending on use) of not storing formatting information
+//! (or benefit, depending on use) of not storing formatting information.
 //!
 //! ## Why?
 //!
@@ -23,56 +23,22 @@
 //!
 //! ## Benchmarks
 //!
-//! On my personal laptop, on low power setting:
-//! ```text
-//! // in release mode
-//! bench "html-standard-compact.kdl" {
-//!   JustKdlDom {
-//!     time "688.9548ms"
-//!     memory new=217_494_981 free=28_488_457 net=189_006_524
-//!   }
-//!   Kdl {
-//!     time "13.228400752s"
-//!     memory new=5_219_542_533 free=4_305_774_657 net=913_767_876
-//!   }
-//! }
-//! bench "html-standard.kdl" {
-//!   JustKdlDom {
-//!     time "628.389088ms"
-//!     memory new=357_151_222 free=35_738_264 net=321_412_958
-//!   }
-//!   Kdl {
-//!     time "18.194044124s"
-//!     memory new=8_146_781_320 free=6_584_885_611 net=1_561_895_709
-//!   }
-//! }
+//! On my personal laptop, (i5-1240P, in power-saver):
+//! |Opt.|Parser|Benchmark|Time|Alloc|Resize|Free|Net|
+//! |:-|:-|:-|:-|:-|:-|:-|:-|
+//! |Release|`kdl-org/kdl`|`html-standard.kdl`|20.536s|7.2GiB|205.0MiB|5.9GiB|1.5GiB|
+//! |Release|`just-kdl`|`html-standard.kdl`|0.720s|272.4MiB|34.1MiB|768B|306.5MiB|
+//! |Release|`kdl-org/kdl`|`html-standard-compact.kdl`|13.895s|4.5GiB|163.1MiB|3.9GiB|871.4MiB|
+//! |Release|`just-kdl`|`html-standard-compact.kdl`|0.459s|153.1MiB|27.2MiB|768B|180.3MiB|
+//! |Debug|`kdl-org/kdl`|`html-standard.kdl`|160.882s|7.2GiB|205.0MiB|5.9GiB|1.5GiB|
+//! |Debug|`just-kdl`|`html-standard.kdl`|4.676s|272.4MiB|34.1MiB|768B|306.5MiB|
+//! |Debug|`kdl-org/kdl`|`html-standard-compact.kdl`|108.690s|4.5GiB|163.1MiB|3.9GiB|871.4MiB|
+//! |Debug|`just-kdl`|`html-standard-compact.kdl`|3.418s|153.1MiB|27.2MiB|768B|180.3MiB|
 //!
-//! // in debug mode
-//! bench "html-standard-compact.kdl" {
-//!   JustKdlDom {
-//!     time "4.169828469s"
-//!     memory new=217_494_981 free=28_488_457 net=189_006_524
-//!   }
-//!   Kdl {
-//!     time "149.249652517s"
-//!     memory new=5_219_542_533 free=4_305_774_657 net=913_767_876
-//!   }
-//! }
-//! bench "html-standard.kdl" {
-//!   JustKdlDom {
-//!     time "5.756129305s"
-//!     memory new=357_151_222 free=35_738_264 net=321_412_958
-//!   }
-//!   Kdl {
-//!     time "211.812757636s"
-//!     memory new=8_146_781_320 free=6_584_885_611 net=1_561_895_709
-//!   }
-//! }
-//! ```
 //! In summary:
-//! - 19-36 times faster (on average, will likely be less in practice)
+//! - roughly 30 times faster
 //! - *significantly* fewer temporary allocations
-//! - fewer output allocations (even with cleared formatting!)
+//! - smaller final output allocations
 //!
 //! [kdl]: <https://kdl.dev>
 //! [kdl-rs]: https://docs.rs/kdl

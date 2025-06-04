@@ -18,4 +18,3 @@ version = "2.0.11"
 # for testing compliance & performance
 [dev-dependencies.kdl]
 version = "6.3.4"
-#default-features = false
