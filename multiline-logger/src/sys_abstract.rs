@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Common system abstractions
-#[cfg(not(feature = "backtrace"))]
-use std::marker::PhantomData;
+use std::io;
 use std::path::Path;
 
 use crate::{Header, Panic, Record};
 
 /// functions required to be implemented by a platform
-pub trait SystemImpl {
+pub(crate) trait SystemImpl {
 	type File;
 	fn file_new(path: &'static Path) -> Self::File;
 	fn file_p_header(this: &Self::File, message: &Header);
@@ -27,10 +26,15 @@ pub trait SystemImpl {
 	#[cfg(feature = "backtrace")]
 	fn backtrace_new() -> Self::Backtrace;
 	#[cfg(not(feature = "backtrace"))]
-	fn backtrace_new() -> PhantomData<Self> { PhantomData }
+	fn backtrace_new() {}
+	#[cfg(feature = "backtrace")]
+	fn backtrace_write<W: io::Write>(trace: &Self::Backtrace, writer: W) -> io::Result<()>;
+	#[cfg(not(feature = "backtrace"))]
+	#[expect(clippy::trivially_copy_pass_by_ref, reason = "api symmetry")]
+	fn backtrace_write<W>((): &(), _: W) -> io::Result<()> { Ok(()) }
+	#[cfg(feature = "backtrace")]
+	fn backtrace_string(trace: &Self::Backtrace) -> String;
+	#[cfg(not(feature = "backtrace"))]
+	#[expect(clippy::trivially_copy_pass_by_ref, reason = "api symmetry")]
+	fn backtrace_string((): &()) -> String { String::new() }
 }
-
-#[cfg(feature = "backtrace")]
-pub type MaybeBacktrace<T> = <T as SystemImpl>::Backtrace;
-#[cfg(not(feature = "backtrace"))]
-pub type MaybeBacktrace<T> = PhantomData<T>;

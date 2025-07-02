@@ -104,7 +104,7 @@ impl SystemImpl for System {
 			&thread.to_string(),
 			message.message_str(),
 			&format!("{}", message.location_display()),
-			trace.clone(),
+			trace.data.clone(),
 		);
 	}
 	#[cfg(feature = "backtrace")]
@@ -112,4 +112,16 @@ impl SystemImpl for System {
 	#[cfg(feature = "backtrace")]
 	#[inline]
 	fn backtrace_new() -> Self::Backtrace { js_trace() }
+	#[cfg(feature = "backtrace")]
+	fn backtrace_write<W: std::io::Write>(
+		trace: &Self::Backtrace,
+		mut writer: W,
+	) -> std::io::Result<()> {
+		std::io::Write::write_all(&mut writer, Self::backtrace_string(trace).as_bytes())
+	}
+	#[cfg(feature = "backtrace")]
+	fn backtrace_string(trace: &Self::Backtrace) -> String {
+		// TODO: this shit don't work, get js-sys since it's there already
+		trace.as_string().unwrap_or_default()
+	}
 }

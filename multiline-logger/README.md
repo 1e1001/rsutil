@@ -13,7 +13,7 @@ fn main() {
 		filters: &[("", LevelFilter::Trace)],
 		file_out: Some(Path::new("target/test.log")),
 		console_out: true,
-		panic_hook: true,
+		panic_hook: Some(|_| ()),
 	}
 	.init();
 	log::trace!("Trace\n");
@@ -28,5 +28,7 @@ fn main() {
 For more information, [read the docs](https://docs.rs/multiline-logger).
 
 ## Changelog
+### 0.2.0
+- Turn `panic_hook` into a handler function, user-side panic information is very incomplete
 ### 0.1.0
 - Initial (unstable) release

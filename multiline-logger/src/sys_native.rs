@@ -95,7 +95,7 @@ impl SystemImpl for System {
 		);
 		#[cfg(feature = "backtrace")]
 		let _ = color_backtrace::BacktracePrinter::new()
-			.print_trace(trace, &mut termcolor::NoColor::new(f));
+			.print_trace(&trace.data, &mut termcolor::NoColor::new(f));
 		#[cfg(not(feature = "backtrace"))]
 		let _ = trace;
 	}
@@ -191,7 +191,8 @@ impl SystemImpl for System {
 		_ = writeln!(f, "→ {}", message.location_display());
 		_ = f.set_color(&color_reset());
 		#[cfg(feature = "backtrace")]
-		let _ = color_backtrace::BacktracePrinter::new().print_trace(trace, &mut f);
+		// TODO: set a fun message here!
+		let _ = color_backtrace::BacktracePrinter::new().print_trace(&trace.data, &mut f);
 		let _ = trace;
 	}
 	#[inline]
@@ -205,4 +206,18 @@ impl SystemImpl for System {
 	#[cfg(feature = "backtrace")]
 	#[inline]
 	fn backtrace_new() -> Self::Backtrace { backtrace::Backtrace::new() }
+	#[cfg(feature = "backtrace")]
+	fn backtrace_write<W: std::io::Write>(
+		trace: &Self::Backtrace,
+		writer: W,
+	) -> std::io::Result<()> {
+		color_backtrace::BacktracePrinter::new()
+			.print_trace(trace, &mut termcolor::NoColor::new(writer))
+	}
+	#[cfg(feature = "backtrace")]
+	fn backtrace_string(trace: &Self::Backtrace) -> String {
+		let mut writer = Vec::new();
+		_ = Self::backtrace_write(trace, &mut writer);
+		String::from_utf8(writer).unwrap_or_default()
+	}
 }

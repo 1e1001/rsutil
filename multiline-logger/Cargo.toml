@@ -1,6 +1,6 @@
 [package]
 name = "multiline-logger"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["1e1001"]
 description = "Personal logger implementation"
@@ -35,7 +35,7 @@ version = "0.7.0"
 optional = true
 # windows-specific
 [target.'cfg(windows)'.dependencies.windows-sys]
-version = "0.59.0"
+version = "0.60.2"
 features = ["Win32_Foundation", "Win32_System_Console"]
 
 [features]

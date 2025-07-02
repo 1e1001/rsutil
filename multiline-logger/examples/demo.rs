@@ -11,7 +11,13 @@ fn main() {
 		filters: &[("", LevelFilter::Trace)],
 		file_out: Some(Path::new("target/test.log")),
 		console_out: true,
-		panic_hook: true,
+		#[expect(clippy::print_stdout, reason = "demo")]
+		panic_hook: Some(|info| {
+			println!(
+				"Custom panic handler\nPanic info: {info:?}\nBacktrace: {:?}",
+				info.trace.as_string()
+			);
+		}),
 	}
 	.init();
 	log::trace!("Trace\n");

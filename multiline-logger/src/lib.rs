@@ -22,6 +22,7 @@
 //!
 //! [`init`]: Settings::init
 
+use std::io::{self, Write};
 use std::mem::replace;
 use std::num::NonZeroU32;
 use std::panic::Location;
@@ -33,7 +34,7 @@ use std::{fmt, panic, ptr};
 /// For convenience :)
 pub use log;
 use log::{Level, LevelFilter, Log, set_logger, set_max_level};
-use sys_abstract::{MaybeBacktrace, SystemImpl};
+use sys_abstract::SystemImpl;
 use time::{Date, OffsetDateTime};
 
 mod sys_abstract;
@@ -59,8 +60,9 @@ pub struct Settings {
 	pub file_out: Option<&'static Path>,
 	/// Set to `true` to output to an appropriate console
 	pub console_out: bool,
-	/// Set to `true` to enable the panic hook
-	pub panic_hook: bool,
+	/// Enables the formatted panic hook, and calls the supplied function.
+	/// Use `|_| ()` if you don't have anything to run
+	pub panic_hook: Option<fn(Panic)>,
 }
 
 impl Settings {
@@ -81,10 +83,10 @@ impl Settings {
 			.map(|&(_, level)| level)
 			.max()
 			.unwrap_or(LevelFilter::Off);
-		if panic_hook {
+		if let Some(handler) = panic_hook {
 			// set the hook before installing the logger,
 			// to show panic messages if logger initialization breaks
-			panic::set_hook(Box::new(panic_handler));
+			panic::set_hook(Box::new(panic_handler(handler)));
 		}
 		let date = now().date();
 		let logger = Logger {
@@ -180,9 +182,12 @@ fn now() -> OffsetDateTime {
 	OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc())
 }
 
+/// Name / Id of a thread
 #[derive(Debug)]
-enum ThreadName<'data> {
+pub enum ThreadName<'data> {
+	/// Thread has a name
 	Name(&'data str),
+	/// Thread is ID only
 	Id(ThreadId),
 }
 impl<'data> ThreadName<'data> {
@@ -227,24 +232,66 @@ struct Record<'data> {
 	level: Level,
 }
 
+/// System-agnostic backtrace type
+#[derive(Debug)]
+pub struct Backtrace {
+	#[cfg(feature = "backtrace")]
+	data: <System as SystemImpl>::Backtrace,
+	#[cfg(not(feature = "backtrace"))]
+	data: (),
+}
+
+impl Backtrace {
+	fn capture() -> Self {
+		Self {
+			data: System::backtrace_new(),
+		}
+	}
+	// TODO: platform-specific converters
+	// TODO: some way to get color printing
+	// TODO: impl Display via some fucked up io::Write → fmt::Write adapter
+	// for now I just implemented all I need
+	/// Print backtrace to a writer
+	/// # Errors
+	/// if the writer errors, or backtrace error
+	pub fn write<W: Write>(&self, writer: W) -> io::Result<()> {
+		System::backtrace_write(&self.data, writer)
+	}
+	/// Get the backtrace as a string
+	pub fn as_string(&self) -> String { System::backtrace_string(&self.data) }
+}
+
+/// Panic handler information. This structure will change with updates!
 /// ```text
 /// {BR}== title - {BM}thread{BR} Panic ==
 /// {0}message
 /// {BG}→ location
 /// {0}backtrace```
-#[derive(Debug)]
-struct Panic<'data> {
-	thread: ThreadName<'data>,
+pub struct Panic<'data> {
+	/// Panicking thread
+	pub thread: ThreadName<'data>,
 	/// Panic text
-	message: Option<&'data str>,
+	pub message: Option<&'data str>,
 	/// Panic location
-	location: Option<Location<'data>>,
+	pub location: Option<Location<'data>>,
 	/// Application title
-	title: &'data str,
-	/// Log file path, if you want to open it
-	path: Option<&'data Path>,
-	/// Backtrace, probably hard to access yourself
-	trace: MaybeBacktrace<System>,
+	pub title: &'data str,
+	/// Log file path, if you want to show it to the user
+	pub path: Option<&'data Path>,
+	/// Backtrace (or not)
+	pub trace: Backtrace,
+}
+
+impl fmt::Debug for Panic<'_> {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+		f.debug_struct("Panic")
+			.field("thread", &self.thread)
+			.field("message", &self.message)
+			.field("location", &self.location)
+			.field("title", &self.title)
+			.field("path", &self.path)
+			.finish_non_exhaustive()
+	}
 }
 
 impl Panic<'_> {
@@ -254,30 +301,30 @@ impl Panic<'_> {
 	}
 }
 
-fn panic_handler(info: &panic::PanicHookInfo) {
-	let logger = downcast_log(log::logger());
-	let thread = thread::current();
-	let mut message = Panic {
-		thread: ThreadName::new(&thread),
-		message: info.payload_as_str(),
-		location: info.location().copied(),
-		title: "[pre-init?]",
-		path: None,
-		trace: System::backtrace_new(),
-	};
-	if let Some(logger) = logger {
-		message.title = logger.title;
-		message.path = System::file_path(logger.file_out.as_ref());
-		if let Some(out) = &logger.file_out {
-			System::file_p_panic(out, &message);
+fn panic_handler(handler: fn(Panic)) -> impl Fn(&panic::PanicHookInfo) {
+	move |info: &panic::PanicHookInfo| {
+		let logger = downcast_log(log::logger());
+		let thread = thread::current();
+		let mut message = Panic {
+			thread: ThreadName::new(&thread),
+			message: info.payload_as_str(),
+			location: info.location().copied(),
+			title: "[unknown?]",
+			path: None,
+			trace: Backtrace::capture(),
+		};
+		if let Some(logger) = logger {
+			message.title = logger.title;
+			message.path = System::file_path(logger.file_out.as_ref());
+			if let Some(out) = &logger.file_out {
+				System::file_p_panic(out, &message);
+			}
+			if let Some(out) = &logger.console_out {
+				System::console_p_panic(out, &message);
+			}
+			handler(message);
+		} else {
+			System::fallback_p_panic(&message);
 		}
-		if let Some(out) = &logger.console_out {
-			System::console_p_panic(out, &message);
-		}
-		// TODO: do fancy dialog stuff here
-		// and do it in a way that lets custom dialog handler run
-		// e.g. show a window popup, or an in-game overlay frame (like N64)
-	} else {
-		System::fallback_p_panic(&message);
 	}
 }
