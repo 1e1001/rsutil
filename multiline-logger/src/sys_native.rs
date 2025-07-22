@@ -109,7 +109,7 @@ impl SystemImpl for System {
 	#[inline]
 	fn console_new() -> Self::Console {
 		#[cfg(windows)]
-		if stderr().is_terminal() {
+		if std::io::IsTerminal::is_terminal(&std::io::stderr()) {
 			// open a console for output
 			use windows_sys::Win32::System::Console;
 			if unsafe { Console::AttachConsole(u32::MAX) } == 0 {
