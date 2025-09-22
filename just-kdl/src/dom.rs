@@ -1,12 +1,16 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! document tree structures, start at [`Document`]
 
-use std::borrow::Cow;
-use std::cell::Cell;
-use std::collections::HashSet;
-use std::convert::Infallible;
-use std::fmt;
-use std::ops::{Index, IndexMut};
+use alloc::borrow::Cow;
+use alloc::string::String;
+use alloc::vec;
+use alloc::vec::Vec;
+use core::cell::Cell;
+use core::convert::Infallible;
+use core::fmt;
+use core::ops::{Index, IndexMut};
+
+use hashbrown::HashSet;
 
 use crate::number::Number;
 use crate::stream::{Error, Event, Parser};
@@ -174,17 +178,18 @@ impl<'text> Node<'text> {
 		let mut seen = HashSet::new();
 		for entry in self.entries.iter_mut().rev() {
 			if let Some(key) = &mut entry.key {
-				if seen.contains(key) {
+				if seen.contains(&**key) {
 					*key = Cow::Borrowed(marker);
 				} else {
-					seen.insert(&*key);
+					seen.insert(&**key);
 				}
 			}
 		}
+		drop(seen);
 		self.entries.retain(|ent| {
 			!ent.key
 				.as_ref()
-				.is_some_and(|key| std::ptr::eq(key.as_ptr(), marker.as_ptr()) && key.is_empty())
+				.is_some_and(|key| core::ptr::eq(key.as_ptr(), marker.as_ptr()) && key.is_empty())
 		});
 	}
 }

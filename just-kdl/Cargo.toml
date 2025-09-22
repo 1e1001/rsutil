@@ -12,9 +12,16 @@ documentation = "https://docs.rs/just-kdl"
 homepage = "https://github.com/1e1001/rsutil/tree/main/just-kdl"
 repository = "https://github.com/1e1001/rsutil/tree/main/just-kdl"
 
+[dependencies]
+hashbrown = "0.16.0"
+
 [dependencies.thiserror]
 version = "2.0.11"
 
 # for testing compliance & performance
 [dev-dependencies.kdl]
 version = "6.3.4"
+
+[features]
+default = ["std"]
+std = []

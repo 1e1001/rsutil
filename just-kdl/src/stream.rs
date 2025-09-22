@@ -12,8 +12,10 @@
 // TODO: some alternative input api: peek/consume utf-8 stream?
 // TODO: fuzzing!
 
-use std::borrow::Cow;
-use std::fmt;
+use alloc::borrow::{Cow, ToOwned};
+use alloc::string::String;
+use alloc::vec::Vec;
+use core::fmt;
 
 use crate::dom::Value;
 use crate::number::{Number, NumberError};
@@ -538,7 +540,7 @@ impl<'text> Grammar<'text> {
 				}
 			})
 			.collect::<PResult<Vec<_>>>()
-			.map(|lines| dbg!(lines).join("\n"))
+			.map(|lines| lines.join("\n"))
 	}
 	/// {single, multi}-line {raw, escaped} string, starting after the first "
 	fn quoted_string(&self, start: Pos, raw: usize) -> PResult<(Pos, Cow<'text, str>)> {

@@ -42,9 +42,12 @@
 //!
 //! [kdl]: <https://kdl.dev>
 //! [kdl-rs]: https://docs.rs/kdl
+#![cfg_attr(not(any(test, feature = "std")), no_std)]
 
-use std::borrow::Cow;
-use std::fmt;
+extern crate alloc;
+
+use alloc::borrow::{Cow, ToOwned};
+use core::fmt;
 
 pub mod dom;
 pub mod number;

@@ -3,10 +3,10 @@
 //!
 //! This is a similar approach as used in other serialization libraries I found
 
-use std::fmt;
-use std::mem::discriminant;
-use std::num::FpCategory;
-use std::str::FromStr;
+use core::fmt;
+use core::mem::discriminant;
+use core::num::FpCategory;
+use core::str::FromStr;
 
 use thiserror::Error;
 
@@ -48,8 +48,8 @@ impl PartialEq for NumberInner {
 	}
 }
 impl Eq for NumberInner {}
-impl std::hash::Hash for NumberInner {
-	fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+impl core::hash::Hash for NumberInner {
+	fn hash<H: core::hash::Hasher>(&self, state: &mut H) {
 		discriminant(self).hash(state);
 		match *self {
 			NumberInner::Float(v) => norm_float(v).hash(state),
