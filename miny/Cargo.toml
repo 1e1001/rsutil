@@ -12,5 +12,10 @@ documentation = "https://docs.rs/miny"
 homepage = "https://github.com/1e1001/rsutil/tree/main/miny"
 repository = "https://github.com/1e1001/rsutil/tree/main/miny"
 
+# impl Allocative for Miny
+[dependencies.allocative]
+version = "0.3.4"
+optional = true
+
 [lints]
 workspace = true

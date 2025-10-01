@@ -139,3 +139,32 @@ impl<T: ?Sized + Any> Miny<T> {
 		}
 	}
 }
+
+#[cfg(feature = "allocative")]
+impl<T> allocative::Allocative for Miny<T>
+where
+	T: ?Sized + allocative::Allocative,
+{
+	fn visit<'visitor, 'contents: 'visitor>(
+		&self,
+		visitor: &'visitor mut allocative::Visitor<'contents>,
+	) {
+		use core::ptr::Pointee;
+
+		let mut visitor = visitor.enter_self_sized::<Self>();
+		let meta_size = mem::size_of::<<T as Pointee>::Metadata>();
+		if meta_size > 0 {
+			// metadata doesn't have anything we can inspect
+			visitor.visit_field_with(allocative::Key::new("meta"), meta_size, |_| {});
+		}
+		if Self::on_stack(self) {
+			visitor.visit_field(allocative::Key::new("inline"), &**self);
+		} else {
+			// using *mut () instead of *mut T, since we already visited the metadata
+			let mut visitor =
+				visitor.enter_unique(allocative::Key::new("ptr"), mem::size_of::<*mut ()>());
+			T::visit(self, &mut visitor);
+		}
+		visitor.exit();
+	}
+}
