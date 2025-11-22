@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 // TODO: it's very possible to make this stable-able:
 // - ptr_metadata: remove if log#666 gets resolved
-// - panic_payload_as_str: just inline the implementation
-#![feature(ptr_metadata, panic_payload_as_str)]
+#![feature(ptr_metadata)]
 //! [![Repository](https://img.shields.io/badge/repository-GitHub-brightgreen.svg)](https://github.com/1e1001/rsutil/tree/main/multiline-logger)
 //! [![Crates.io](https://img.shields.io/crates/v/multiline-logger)](https://crates.io/crates/multiline-logger)
 //! [![docs.rs](https://img.shields.io/docsrs/multiline-logger)](https://docs.rs/multiline-logger)
@@ -62,7 +61,7 @@ pub struct Settings {
 	pub console_out: bool,
 	/// Enables the formatted panic hook, and calls the supplied function.
 	/// Use `|_| ()` if you don't have anything to run
-	pub panic_hook: Option<fn(Panic)>,
+	pub panic_hook: Option<fn(Panic<'_>)>,
 }
 
 impl Settings {
