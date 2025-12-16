@@ -29,7 +29,7 @@ For more information, [read the docs](https://docs.rs/multiline-logger).
 
 ## Changelog
 ### 0.2.1
-- Fix Windows support
+- Fix Windows support & nightly changes
 ### 0.2.0
 - Turn `panic_hook` into a handler function, user-side panic information is very incomplete
 ### 0.1.0
