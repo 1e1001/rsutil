@@ -18,7 +18,7 @@
 extern crate core;
 
 use core::cell::Cell;
-use core::fmt::{Debug, Error, Formatter, Result};
+use core::fmt::{Debug, Formatter, Result};
 use core::iter::IntoIterator;
 use core::marker::Sized;
 use core::option::Option;
@@ -28,7 +28,7 @@ mod tests;
 
 /// The whole point, see the [crate docs](`crate`).
 ///
-/// Note that the iterator can only be debugged once, aim to debug your iterator
+/// Note that an iterator can only be debugged once, aim to wrap your iterator
 /// as late as possible, usually directly in the print / format statement.
 pub struct IterDebug<T>(Cell<Option<T>>);
 
@@ -49,11 +49,11 @@ where
 	T::Item: Debug,
 {
 	#[inline]
-	fn fmt(&self, formatter: &mut Formatter) -> Result {
-		self.0
-			.take()
-			.ok_or(Error)
-			.and_then(|value| formatter.debug_list().entries(value).finish())
+	fn fmt(&self, f: &mut Formatter) -> Result {
+		match self.0.take() {
+			Option::Some(value) => f.debug_list().entries(value).finish(),
+			Option::None => f.write_str("<iterator consumed>"),
+		}
 	}
 }
 
