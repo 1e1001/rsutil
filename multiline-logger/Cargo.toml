@@ -14,28 +14,28 @@ repository = "https://github.com/1e1001/rsutil/tree/main/multiline-logger"
 
 # common
 [dependencies.log]
-version = "0.4.25"
+version = "0.4.29"
 [dependencies.time]
-version = "0.3.37"
+version = "0.3.44"
 features = ["local-offset"]
 # wasm-specific
 [target.'cfg(target_arch="wasm32")'.dependencies.time]
-version = "0.3.37"
+version = "0.3.44"
 features = ["local-offset", "wasm-bindgen"]
 [target.'cfg(target_arch="wasm32")'.dependencies.wasm-bindgen]
-version = "0.2.100"
+version = "0.2.106"
 # native-specific
 [target.'cfg(not(target_arch="wasm32"))'.dependencies.termcolor]
 version = "1.4.1"
 [target.'cfg(not(target_arch="wasm32"))'.dependencies.backtrace]
-version = "0.3.74"
+version = "0.3.76"
 optional = true
 [target.'cfg(not(target_arch="wasm32"))'.dependencies.color-backtrace]
-version = "0.7.0"
+version = "0.7.2"
 optional = true
 # windows-specific
 [target.'cfg(windows)'.dependencies.windows-sys]
-version = "0.60.2"
+version = "0.61.2"
 features = ["Win32_Foundation", "Win32_System_Console"]
 
 [features]
