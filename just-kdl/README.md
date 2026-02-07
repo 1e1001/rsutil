@@ -4,7 +4,7 @@
 [![docs.rs](https://img.shields.io/docsrs/just-kdl)](https://docs.rs/just-kdl)
 [![MIT OR Apache-2.0](https://img.shields.io/crates/l/just-kdl)](https://github.com/1e1001/rsutil/blob/main/just-kdl/README.md#License)
 
-Implementation of a [kdl] v2.0.1 parser.
+Implementation of a [KDL] v2.0.1 parser.
 ```rust
 let text = "an example; kdl {document}";
 let document = Reader::new(text.as_bytes())
@@ -27,4 +27,4 @@ For more information, [read the docs](https://docs.rs/miny).
 ### 0.1.0
 - Initial (unstable) release
 
-[kdl]: <https://kdl.dev>
+[KDL]: <https://kdl.dev>

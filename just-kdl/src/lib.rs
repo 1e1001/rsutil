@@ -6,7 +6,7 @@
 //! [![docs.rs](https://img.shields.io/docsrs/just-kdl)](https://docs.rs/just-kdl)
 //! [![MIT OR Apache-2.0](https://img.shields.io/crates/l/just-kdl)](https://github.com/1e1001/rsutil/blob/main/just-kdl/README.md#License)
 //!
-//! Small streaming [KDL] v2.0.1 parser
+//! Small streaming [KDL] v2.0.1 parser.
 //!
 //! Designed for reasonable performance and memory efficiency, at the expense
 //! (or benefit, depending on use) of not storing formatting information.
