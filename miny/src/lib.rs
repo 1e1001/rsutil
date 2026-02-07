@@ -47,7 +47,7 @@
 //! it supports any type
 //!
 //! [^2]: Uses [`ptr_metadata`] (Reading the metadata pointer & storing it),
-//! [`layout_for_ptr`] (Determining value size without reading the value), and
+//! [`layout_for_ptr`] (Determining value size before reading the value), and
 //! [`unsize`](https://github.com/rust-lang/rust/issues/18598) (`new_unsized` & `unsize` functions) features
 //!
 //! [^3]: This is needed because the [`Miny`] layout is too weird for

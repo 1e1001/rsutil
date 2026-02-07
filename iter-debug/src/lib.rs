@@ -52,7 +52,7 @@ where
 	fn fmt(&self, f: &mut Formatter) -> Result {
 		match self.0.take() {
 			Option::Some(value) => f.debug_list().entries(value).finish(),
-			Option::None => f.write_str("<iterator consumed>"),
+			Option::None => f.write_str("<consumed iterator>"),
 		}
 	}
 }

@@ -26,7 +26,8 @@ impl_refs!(borrow Borrow);
 impl_refs!(borrow_mut BorrowMut mut);
 
 // TODO: once we get specialization I could probably
-// impl<T> Clone for Miny<T> where Box<T>: Clone & then specialize for normal T
+// impl<T: ?Sized> Clone for Miny<T> where Box<T>: Clone
+// & then specialize for normal T
 impl<T: Clone> Clone for Miny<T> {
 	#[inline]
 	fn clone(&self) -> Self { Self::new((**self).clone()) }

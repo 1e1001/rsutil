@@ -467,6 +467,7 @@ fn massive_u128() {
 	]);
 }
 
+/// mostly just proof that it reduces to a constant
 #[bench]
 fn massive_bench(b: &mut Bencher) {
 	b.iter(|| {

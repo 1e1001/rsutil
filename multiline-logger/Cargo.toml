@@ -2,9 +2,9 @@
 name = "multiline-logger"
 version = "0.2.1"
 edition = "2021"
-authors = ["1e1001"]
+authors.workspace = true
+license.workspace = true
 description = "Personal logger implementation"
-license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["log", "logger"]
 categories = ["value-formatting", "development-tools::debugging"]

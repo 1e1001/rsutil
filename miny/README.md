@@ -6,7 +6,6 @@
 
 A `Box<T>` with `T` stored inline for values less than a pointer in size. Requires **nightly** Rust & `alloc`
 ```rust
-use miny::Miny;
 let small = Miny::new(1_u8);
 let large = Miny::new([1_usize; 32]);
 // small is stored inline on the stack
@@ -21,6 +20,9 @@ assert_eq!(original, [1; 32]);
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 2.1.0
+- Add `allocative` feature [(thanks, Cormac!)](https://github.com/1e1001/rsutil/pull/2)
+
 ### 2.0.3
 - Don't try to deallocate ZSTs when converting from a `Box` [(thanks, Cormac!)](https://github.com/1e1001/rsutil/pull/1)
 - Documenting invariants more

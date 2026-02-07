@@ -7,7 +7,6 @@
 Allows debugging iterators without collecting them to a [`Vec`] first,
 useful in `no_std` environments or when you're lazy.
 ```rust
-# use iter_debug::DebugIterator;
 println!("{:?}", [1, 2, 3, 4].into_iter().map(|v| v * 2).debug());
 // => [2, 4, 6, 8]
 ```

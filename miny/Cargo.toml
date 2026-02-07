@@ -1,10 +1,10 @@
 [package]
 name = "miny"
-version = "2.0.3"
+version = "2.1.0"
 edition = "2021"
-authors = ["1e1001"]
+authors.workspace = true
 description = "Box<T> with small value optimization"
-license = "MIT OR Apache-2.0"
+license.workspace = true
 readme = "README.md"
 keywords = ["box", "dst", "stack"]
 categories = ["data-structures", "no-std"]
