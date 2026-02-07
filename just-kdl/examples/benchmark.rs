@@ -58,27 +58,27 @@ impl CounterAlloc {
 	}
 }
 
-// Safety: forwards to System
+// SAFETY: forwards to System
 unsafe impl GlobalAlloc for CounterAlloc {
 	unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
 		self.alloc.fetch_add(layout.size(), Ordering::Relaxed);
-		// Safety: caller's issue
+		// SAFETY: caller's issue
 		unsafe { System.alloc(layout) }
 	}
 	unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
 		self.free.fetch_add(layout.size(), Ordering::Relaxed);
-		// Safety: caller's issue
+		// SAFETY: caller's issue
 		unsafe { System.dealloc(ptr, layout) }
 	}
 	unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
 		self.alloc.fetch_add(layout.size(), Ordering::Relaxed);
-		// Safety: caller's issue
+		// SAFETY: caller's issue
 		unsafe { System.alloc_zeroed(layout) }
 	}
 	unsafe fn realloc(&self, ptr: *mut u8, layout: Layout, new_size: usize) -> *mut u8 {
 		self.resize
 			.fetch_add(layout.size().abs_diff(new_size), Ordering::Relaxed);
-		// Safety: caller's issue
+		// SAFETY: caller's issue
 		unsafe { System.realloc(ptr, layout, new_size) }
 	}
 }
