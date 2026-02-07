@@ -4,11 +4,26 @@
 [![docs.rs](https://img.shields.io/docsrs/just-kdl)](https://docs.rs/just-kdl)
 [![MIT OR Apache-2.0](https://img.shields.io/crates/l/just-kdl)](https://github.com/1e1001/rsutil/blob/main/just-kdl/README.md#License)
 
-Implementation of a [kdl] v2.0.0 parser.
+Implementation of a [kdl] v2.0.1 parser.
+```rust
+let text = "an example; kdl {document}";
+let document = Reader::new(text.as_bytes())
+    .collect::<Result<Document, _>>()
+    .expect("syntax error");
+assert_eq!(document.to_string(), "
+an example
+kdl {
+    document
+}
+".trim());
+```
 
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 0.2.0
+- Rewrite to be good
+
 ### 0.1.0
 - Initial (unstable) release
 

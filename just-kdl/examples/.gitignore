@@ -1,2 +1,5 @@
+# get these from kdl repository
+# TODO: maybe use submodules but they're kinda annoying
 html-standard.kdl
 html-standard-compact.kdl
+kdl/

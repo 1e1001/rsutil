@@ -7,6 +7,11 @@ members = [
 	"punch-card",
 	"just-kdl",
 ]
+
+[workspace.package]
+authors = ["1e1001"]
+license = "MIT OR Apache-2.0"
+
 [workspace.lints.rust]
 missing_docs = "deny"
 unexpected_cfgs = { level = "warn", check-cfg = ['cfg(rust_analyzer)'] }
@@ -52,7 +57,7 @@ semicolon_outside_block = "warn"
 shadow_unrelated = "warn"
 single_char_lifetime_names = "warn"
 str_to_string = "warn"
-string_to_string = "warn"
+implicit_clone = "warn"
 tests_outside_test_module = "warn"
 todo = "warn"
 try_err = "warn"
