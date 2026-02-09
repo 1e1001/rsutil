@@ -20,9 +20,6 @@ default-features = false
 version = "0.3.4"
 default-features = false
 
-[dependencies.hashbrown]
-version = "0.16.1"
-
 [features]
 default = ["std"]
 # I don't use either crate's std features

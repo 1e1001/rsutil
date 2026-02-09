@@ -21,8 +21,11 @@ kdl {
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### Unreleased
+- Remove `hashbrown` by making `Node::normalize` and `Document::normalize` std-gated
+
 ### 0.2.0
-- Rewrite to be good
+- Rewrite to be good (but still unstable)
 
 ### 0.1.0
 - Initial (unstable) release

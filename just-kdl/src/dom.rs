@@ -15,7 +15,6 @@ use core::fmt;
 use core::ops::{Index, IndexMut};
 use core::ptr::eq as ptr_eq;
 
-use hashbrown::HashSet;
 use smol_str::SmolStr;
 
 use crate::IdentDisplay;
@@ -54,6 +53,7 @@ impl Document {
 	/// Normalize document to kdl spec by [`normalize`]-ing child nodes.
 	///
 	/// [`normalize`]: Node::normalize
+	#[cfg(feature = "std")]
 	pub fn normalize(&mut self) {
 		for node in &mut self.nodes {
 			node.normalize();
@@ -148,7 +148,9 @@ impl Node {
 	/// - Empty children block gets removed
 	/// - Normalize child document
 	/// - Duplicate properties are removed
+	#[cfg(feature = "std")]
 	pub fn normalize(&mut self) {
+		use std::collections::HashSet;
 		if let Some(children) = &mut self.children {
 			if children.nodes.is_empty() {
 				self.children = None;
