@@ -21,8 +21,11 @@ kdl {
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
-### Unreleased
-- Remove `hashbrown` by making `Node::normalize` and `Document::normalize` std-gated
+### 0.3.0
+- Remove `hashbrown` by making `dom::Node::normalize` and `dom::Document::normalize` std-gated.
+- Fix `dom::{Node, Document} as Display` and `writer::Writer` incorrectly rendering empty child blocks.
+- `dom::iter::DocumentIter` and `dom::iter::NodeIter` are now `dom::iter::IntoIter`.
+- new `dom::iter::Iter` to iterate by-reference.
 
 ### 0.2.0
 - Rewrite to be good (but still unstable)

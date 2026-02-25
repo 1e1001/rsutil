@@ -2,8 +2,6 @@
 //! Since the kdl document / stream structure is only needed at the boundary
 //! between text and data, a string-based number representation works fine.
 
-// TODO: add tests / fuzzing
-
 use core::fmt;
 use core::num::{FpCategory, IntErrorKind, ParseFloatError, ParseIntError};
 use core::str::FromStr;
@@ -16,11 +14,13 @@ use crate::ssb2::SmolStrBuilder2;
 
 /* number format:
 #.+ = special float
+	only #inf #-inf #nan (Number::* constants)
 x-?[0-9a-f]+ = base16 int
 d-?[0-9]+ = base10 int
 o-?[0-9a-f]+ = base8 int
 b-?[0-9a-f]+ = base2 int
 f-?[0-9]+(.[0-9]+)?(E[0-9]+)? = base10 float
+	no base-n floats since it's too much work for a non-standard extension
 */
 impl Number {
 	/// Value for positive infinity.

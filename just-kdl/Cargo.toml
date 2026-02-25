@@ -1,6 +1,6 @@
 [package]
 name = "just-kdl"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2024"
 authors.workspace = true
 license.workspace = true
@@ -22,7 +22,7 @@ default-features = false
 
 [features]
 default = ["std"]
-# I don't use either crate's std features
+# enables Node::normalize and Document::normalize
 std = []
 
 # For testing compliance & performance

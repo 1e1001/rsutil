@@ -121,7 +121,7 @@ impl SmolStrBuilder2 {
 			SmolStrBuilder2::Heap(text) => text.truncate(text.floor_char_boundary(len)),
 		}
 	}
-	// TODO: replace these two with ascii::Char once stable
+	// TODO: use ascii::Char once it's stable
 	pub fn push_repeated(&mut self, c: u8, n: usize) {
 		assert!(c < 128, "bad char write");
 		self.reserve(n);

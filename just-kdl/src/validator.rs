@@ -78,10 +78,7 @@ impl Validator {
 				));
 			}
 			(State::Block, event) => {
-				return Err(ValidatorError::Expected(
-					"Node, End, or Done",
-					event.clone(),
-				));
+				return Err(ValidatorError::Expected("Node or End", event.clone()));
 			}
 		};
 		Ok(())

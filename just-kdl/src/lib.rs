@@ -91,7 +91,7 @@
 //! let mut output = String::new();
 //! let mut writer = Writer::new(&mut output);
 //! for (event, _) in events {
-//!     writer.push(event);
+//!     writer.push(&event);
 //! }
 //! assert_eq!(output, "
 //! an example
@@ -163,7 +163,6 @@ pub mod reader;
 mod ssb2;
 pub mod validator;
 pub mod writer;
-// TODO: serde integration
 
 #[cfg(test)]
 mod tests;

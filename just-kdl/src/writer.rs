@@ -3,6 +3,8 @@
 //!
 //! You probably want to start at [`Writer`].
 
+// TODO: is there much use for a "minified" writer?
+
 use core::fmt;
 
 use crate::IdentDisplay;
@@ -12,11 +14,19 @@ use crate::dom::Event;
 /// Writer of document events.
 pub struct Writer<W> {
 	inner: W,
-	first: bool,
-	// since the writer doesn't support comments, there's no need to track a comment-depth stack
-	block: bool,
+	state: State,
 	indent: usize,
 	indent_text: &'static str,
+}
+
+// since the writer doesn't support comments, there's no need to track a
+// comment-depth stack
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum State {
+	First,
+	BlockStart,
+	Block,
+	Node,
 }
 
 impl<W: fmt::Write> Writer<W> {
@@ -24,8 +34,7 @@ impl<W: fmt::Write> Writer<W> {
 	pub const fn new(writer: W) -> Self {
 		Self {
 			inner: writer,
-			first: true,
-			block: true,
+			state: State::First,
 			indent: 0,
 			indent_text: "    ",
 		}
@@ -43,32 +52,38 @@ impl<W: fmt::Write> Writer<W> {
 	/// Write an event to the writer
 	/// # Errors
 	/// If the inner writer errors
-	pub fn push(&mut self, event: Event) -> fmt::Result {
+	pub fn push(&mut self, event: &Event) -> fmt::Result {
 		match event {
 			Event::Node { r#type, name } => {
-				if !self.first {
+				if self.state != State::First {
 					self.line()?;
 				}
-				self.first = false;
-				self.block = false;
+				self.state = State::Node;
 				if let Some(r#type) = r#type {
-					write!(self.inner, "({})", IdentDisplay(&r#type))?;
+					write!(self.inner, "({})", IdentDisplay(r#type))?;
 				}
-				write!(self.inner, "{}", IdentDisplay(&name))
+				write!(self.inner, "{}", IdentDisplay(name))
 			}
 			Event::Entry(entry) => write!(self.inner, " {entry}"),
 			Event::Children => {
 				self.indent += 1;
-				self.block = true;
+				self.state = State::BlockStart;
 				write!(self.inner, " {{")
 			}
 			Event::End => {
-				if self.block {
-					self.indent -= 1;
-					self.line()?;
-					write!(self.inner, "}}")?;
+				match self.state {
+					State::BlockStart => {
+						self.indent -= 1;
+						write!(self.inner, "}}")?;
+					}
+					State::Block => {
+						self.indent -= 1;
+						self.line()?;
+						write!(self.inner, "}}")?;
+					}
+					_ => {}
 				}
-				self.block = true;
+				self.state = State::Block;
 				Ok(())
 			}
 		}

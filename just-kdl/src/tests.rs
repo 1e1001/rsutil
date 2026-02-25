@@ -3,12 +3,16 @@
 mod spec;
 
 /* TODO: fuzzing
-	comparing kdl-rs/kdl-js & my kdl
-	round-trip ability (bytes -> read(1) -> write -> read(2) leads to 1 == 2)
+comparing kdl-rs/kdl-js & my kdl
+independent / local tests
+	round-trip ability (bytes → read(1) → write → read(2) leads to 1 == 2)
 	lexer must always produce a complete stream (never panic)
 	reader must always produce a stream or Err (never panic)
-	dom round-trip (events -> document -> events), except spans
+	dom round-trip (events → document → events), except spans
 code coverage things
+Number implementation
+	must never panic!
+	integer / float round-trip (value → Number → Value)
 */
 
 fn test_info(name: &str) -> (&'static str, Option<&'static str>) {
@@ -19,14 +23,21 @@ fn test_info(name: &str) -> (&'static str, Option<&'static str>) {
 	panic!("invalid test {name}");
 }
 
-fn test_entry(name: &'static str) { dom::test(name); }
+#[test]
+fn unnormalized_empty_child_block() {
+	dom::test("document {\n    \n}", Some("document {}\n"), false);
+}
+
+fn test_entry(name: &'static str) {
+	let (input, output) = test_info(name);
+	dom::test(input, output, true);
+}
 
 mod dom {
 	use std::mem::replace;
 
 	use crate::dom::{Document, Node, Value};
 	use crate::reader::Reader;
-	use crate::tests::test_info;
 	use crate::validator::Validator;
 	use crate::writer::Writer;
 
@@ -48,8 +59,8 @@ mod dom {
 		}
 	}
 	#[expect(clippy::print_stderr, reason = "tests binary")]
-	pub fn test(name: &'static str) {
-		fn test_inner(input: &str, strict: bool) -> Option<String> {
+	pub fn test(input: &'static str, output: Option<&'static str>, normalize: bool) {
+		fn test_inner(input: &str, strict: bool, normalize: bool) -> Option<String> {
 			let mut validator = Validator::new();
 			let mut document = Reader::new(input.as_bytes())
 				.inspect(|event| {
@@ -67,9 +78,11 @@ mod dom {
 				.collect::<Result<Document, _>>()
 				.inspect_err(|err| eprintln!("Error: {err:?}"))
 				.ok()?;
-			document.normalize();
-			for node in &mut document.nodes {
-				normalize2(node);
+			if normalize {
+				document.normalize();
+				for node in &mut document.nodes {
+					normalize2(node);
+				}
 			}
 			let display = document.to_string() + "\n";
 			let mut written = String::new();
@@ -83,15 +96,14 @@ mod dom {
 						eprintln!("Validation: {err:?}");
 					}
 				}
-				writer.push(event).unwrap();
+				writer.push(&event).unwrap();
 			}
 			written.push('\n');
 			assert_eq!(display, written, "Writer mismatch");
 			Some(display)
 		}
-		let (input, output) = test_info(name);
 		assert_eq!(
-			test_inner(input, output.is_some()).as_deref(),
+			test_inner(input, output.is_some(), normalize).as_deref(),
 			output,
 			"test body failed"
 		);

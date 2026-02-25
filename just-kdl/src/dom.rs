@@ -9,7 +9,6 @@
 
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::cell::Cell;
 use core::convert::Infallible;
 use core::fmt;
 use core::ops::{Index, IndexMut};
@@ -18,6 +17,7 @@ use core::ptr::eq as ptr_eq;
 use smol_str::SmolStr;
 
 use crate::IdentDisplay;
+use crate::writer::Writer;
 
 pub mod iter;
 pub mod number;
@@ -50,6 +50,8 @@ impl Document {
 			.iter_mut()
 			.filter(move |node| node.name() == name)
 	}
+	/// Iterate over the [`Event`]s of this document.
+	pub fn iter(&self) -> iter::Iter<'_> { self.into_iter() }
 	/// Normalize document to kdl spec by [`normalize`]-ing child nodes.
 	///
 	/// [`normalize`]: Node::normalize
@@ -69,12 +71,9 @@ impl fmt::Debug for Document {
 }
 impl fmt::Display for Document {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		let mut iter = self.nodes.iter();
-		if let Some(first) = iter.next() {
-			write!(f, "{first}")?;
-			for node in iter {
-				write!(f, "\n{node}")?;
-			}
+		let mut writer = Writer::new(f);
+		for event in self {
+			writer.push(&event)?;
 		}
 		Ok(())
 	}
@@ -144,6 +143,8 @@ impl Node {
 		key.into()
 			.seek(self.entries.iter_mut(), |ent| ent.name.as_deref())
 	}
+	/// Iterate over the [`Event`]s of this node.
+	pub fn iter(&self) -> iter::Iter<'_> { self.into_iter() }
 	/// Normalize node to kdl spec:
 	/// - Empty children block gets removed
 	/// - Normalize child document
@@ -158,12 +159,11 @@ impl Node {
 				children.normalize();
 			}
 		}
-		// TODO: the only use for hashmaps in the entire library, can it be removed?
 		// TODO: this is simply an unlikely string-pointer
 		// consider a real way to get a fake/random string pointer
 		// or otherwise mark indexes as used with few allocatioons
 		let marker = SmolStr::new_static(&"\0temp"[5..]);
-		// two-pass approach to remove duplicate props
+		// replace duplicate props with marker (in reverse order)
 		let mut seen = HashSet::new();
 		for entry in self.entries.iter_mut().rev() {
 			if let Some(name) = &mut entry.name {
@@ -175,6 +175,7 @@ impl Node {
 			}
 		}
 		drop(seen);
+		// delete marked props
 		self.entries.retain(|ent| {
 			!ent.name
 				.as_ref()
@@ -188,42 +189,16 @@ impl fmt::Debug for Node {
 		f.debug_struct("Node")
 			.field("type", option_debug(self.type_hint().as_ref()))
 			.field("name", &self.name)
-			.field("props", &self.entries)
+			.field("entries", &self.entries)
 			.field("children", option_debug(self.children.as_ref()))
 			.finish()
 	}
 }
 impl fmt::Display for Node {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-		if let Some(r#type) = &self.r#type {
-			write!(f, "({})", IdentDisplay(r#type))?;
-		}
-		fmt::Display::fmt(&IdentDisplay(&self.name), f)?;
-		for entry in &self.entries {
-			write!(f, " {entry}")?;
-		}
-		if let Some(children) = &self.children {
-			// make rust fmt do indents for me
-			struct Children<'this>(&'this Document, Cell<bool>);
-			impl fmt::Debug for Children<'_> {
-				fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-					fmt::Display::fmt(self.0, f)?;
-					// really stupid hack to have debug_set not print the trailing comma
-					// (while not ignoring real errors!)
-					self.1.set(true);
-					Err(fmt::Error)
-				}
-			}
-			struct Block<'this>(&'this Document);
-			impl fmt::Debug for Block<'_> {
-				fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-					let children = Children(self.0, Cell::new(false));
-					let result = f.debug_set().entry(&children).finish();
-					if children.1.get() { Ok(()) } else { result }
-				}
-			}
-			f.write_str(" ")?;
-			write!(f, "{:#?}\n}}", Block(children))?;
+		let mut writer = Writer::new(f);
+		for event in self {
+			writer.push(&event)?;
 		}
 		Ok(())
 	}
@@ -355,7 +330,44 @@ pub enum Value {
 	Null,
 }
 
-// TODO: maybe some value helper methods? e.g. type casting
+/// value util
+macro_rules! valutil {
+	(into $self:ident $ty:ident) => {
+		match $self {
+			Value::$ty(value) => Ok(value),
+			this => Err(this),
+		}
+	};
+	(to $self:ident $ty:ident) => {
+		match $self {
+			Value::$ty(value) => Some(value),
+			_ => None,
+		}
+	};
+}
+
+impl Value {
+	/// Extract the value of a string, or return self on fallback.
+	#[expect(clippy::missing_errors_doc, reason = "not an error")]
+	pub fn into_string(self) -> Result<SmolStr, Self> { valutil!(into self String) }
+	/// Extract the value of a number, or return self on fallback.
+	#[expect(clippy::missing_errors_doc, reason = "not an error")]
+	pub fn into_number(self) -> Result<Number, Self> { valutil!(into self Number) }
+	/// Reference the value of a string, or `None`.
+	pub fn to_string(&self) -> Option<&SmolStr> { valutil!(to self String) }
+	/// Reference the value of a number, or `None`.
+	pub fn to_number(&self) -> Option<&Number> { valutil!(to self Number) }
+	/// Reference the value of a bool, or `None`.
+	pub fn to_bool(&self) -> Option<bool> { valutil!(to self Bool).copied() }
+	/// Check if the value is a string.
+	pub fn is_string(&self) -> bool { matches!(self, Self::String(_)) }
+	/// Check if the value is a number.
+	pub fn is_number(&self) -> bool { matches!(self, Self::Number(_)) }
+	/// Check if the value is a bool.
+	pub fn is_bool(&self) -> bool { matches!(self, Self::Bool(_)) }
+	/// Check if the value is null.
+	pub fn is_null(&self) -> bool { matches!(self, Self::Null) }
+}
 
 impl fmt::Debug for Value {
 	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -431,16 +443,16 @@ pub enum Event {
 }
 
 impl fmt::Debug for Event {
-	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+	fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
 		match self {
 			Self::Node { r#type, name } => f
 				.debug_struct("Node")
 				.field("type", option_debug(r#type.as_ref()))
 				.field("name", name)
 				.finish(),
-			Self::Entry(entry) => write!(f, "{entry:?}"),
-			Self::Children => write!(f, "Children"),
-			Self::End => write!(f, "End"),
+			Self::Entry(entry) => fmt::Debug::fmt(entry, f),
+			Self::Children => f.write_str("Children"),
+			Self::End => f.write_str("End"),
 		}
 	}
 }
