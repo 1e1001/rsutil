@@ -29,7 +29,7 @@ impl DocumentBuilder {
 	pub fn new() -> Self { Self { stack: Vec::new() } }
 	/// Add a single event to the document. Returns a possible top-level node.
 	/// # Panics
-	/// on an invalid event.
+	/// On an invalid event.
 	#[expect(clippy::unwrap_in_result, reason = "option is not success information")]
 	pub fn push(&mut self, event: Event) -> Option<Node> {
 		match event {

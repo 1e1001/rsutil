@@ -71,7 +71,7 @@ fn struct_decode() {
 		.. ..=..=..=.. ..=..=..=.. .. ..=.. ..=..=..=.. ..,
 		.. ..=.. ..=.. ..=..=..=.. .. ..=..=..=..=.. .. ..,
 	).punch_card();
-	// safety: these are all integers so any bit combination is valid
+	// SAFETY: these are all integers so any bit combination is valid
 	let output: Output = unsafe { transmute(data) };
 	assert_eq!(output, Output {
 		a: [10947123, 517895, 1813],
