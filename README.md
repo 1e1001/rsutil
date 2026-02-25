@@ -1,5 +1,6 @@
 # rsutil
 [![MIT OR Apache-2.0](https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-blue)](#License)
+
 Collection of Rust utility libraries, some more useful than others.
 
 | Name                                      | Things                                                                                                                                                                                                   | Description                               |
