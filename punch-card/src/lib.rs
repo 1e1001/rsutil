@@ -32,7 +32,7 @@
 //! ## Why?
 //!
 //! I saw the `punch_card` example in [`weird-exprs.rs`] and (inspired by
-//! [`analog_literals`]) thought "what if that was useful?" and then created
+//! [`analog_literals`]) thought "what if that was usable?" and then created
 //! this.
 //!
 //! ## Usage
