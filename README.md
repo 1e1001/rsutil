@@ -11,7 +11,7 @@ Collection of Rust utility libraries, some more useful than others.
 |[`multiline-logger`](./multiline-logger/)\*|[![crates.io](https://img.shields.io/crates/v/multiline-logger)](https://crates.io/crates/multiline-logger) [![docs.rs](https://img.shields.io/docsrs/multiline-logger)](https://docs.rs/multiline-logger)| Personal logger implementation.           |
 |[`punch-card`](./punch-card)\*             |[![crates.io](https://img.shields.io/crates/v/punch-card)](      https://crates.io/crates/punch-card)       [![docs.rs](https://img.shields.io/docsrs/punch-card)](      https://docs.rs/punch-card)      | Punched card literals, for some reason.   |
 
-\* = requires nightly rust to compile
+\* = uses nightly Rust features.
 
 ## License
 All libraries here are licensed under a combination [MIT](./LICENSE-MIT) or [Apache 2.0](./LICENSE-APACHE) license.
