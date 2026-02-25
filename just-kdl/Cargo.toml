@@ -12,8 +12,8 @@ documentation = "https://docs.rs/just-kdl"
 homepage = "https://github.com/1e1001/rsutil/tree/main/just-kdl"
 repository = "https://github.com/1e1001/rsutil/tree/main/just-kdl"
 
-[dependencies.thiserror]
-version = "2.0.11"
+[dependencies.displaydoc]
+version = "0.2.5"
 default-features = false
 
 [dependencies.smol_str]

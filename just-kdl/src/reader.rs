@@ -7,45 +7,39 @@
 
 use alloc::vec::Vec;
 use core::ops::Range;
+use std::error::Error;
 
+use displaydoc::Display;
 use smol_str::SmolStr;
-use thiserror::Error;
 
 use crate::dom::{Entry, Event, Value};
 use crate::lexer::{Input, Lexer, LexerError, Token};
 
 /// An error while reading
-#[derive(Debug, Error)]
+#[derive(Debug, Display)]
 #[non_exhaustive]
 pub enum ReaderError {
-	#[error(transparent)]
-	/// Inner lexer error, includes IO errors
+	/// {0}
 	Lexer(LexerError),
-	#[error("Expected string, got {0}")]
-	#[doc = "Expected string, got {0}"]
+	/// Expected string, got {0}
 	ExpectedString(Token),
-	#[error("Expected value, got {0}")]
-	#[doc = "Expected value, got {0}"]
+	/// Expected value, got {0}
 	ExpectedValue(Token),
-	#[error("Expected ')', got {0}")]
-	#[doc = "Expected ')', got {0}"]
+	/// Expected ')', got {0}
 	ExpectedCloseParen(Token),
-	#[error("Unclosed '{{' before end of file")]
-	#[doc = "Unclosed '{' before end of file"]
+	/// Unclosed '{{' before end of file
 	UnclosedOpen,
-	#[error("Unmatched '}}'")]
-	#[doc = "Unmatched '}'"]
+	/// Unmatched '}}'
 	UnmatchedClose,
-	#[error("Expected '/-' or space before entry")]
-	#[doc = "Expected '/-' or space before entry"]
+	/// Expected '/-' or space before entry
 	ExpectedEntrySpace,
-	#[error("Expected entry, block, or end of node")]
-	#[doc = "Expected entry, block, or end of node"]
+	/// Expected entry, block, or end of node
 	ExpectedEntry,
-	#[error("Expected block or end of node")]
-	#[doc = "Expected block or end of node"]
+	/// Expected block or end of node
 	ExpectedBlock,
 }
+impl Error for ReaderError {}
+
 /// Value (event, error) with a span attached
 pub type Spanned<T> = (T, Range<usize>);
 // internal result with error spans

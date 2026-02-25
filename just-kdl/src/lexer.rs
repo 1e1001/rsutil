@@ -12,9 +12,10 @@ use core::iter::repeat_n;
 use core::mem::discriminant;
 use core::num::NonZeroUsize;
 use core::ops::Range;
+use std::error::Error;
 
+use displaydoc::Display;
 use smol_str::SmolStr;
-use thiserror::Error;
 
 use crate::dom::Number;
 use crate::dom::number::NumberBuilder;
@@ -93,64 +94,49 @@ impl fmt::Display for Token {
 // bad = not one of possible options (for one thing)
 
 /// An error while lexing.
-#[derive(Debug, Error)]
+#[derive(Debug, Display)]
 #[non_exhaustive]
 pub enum LexerError {
 	#[cfg(feature = "std")]
-	#[error(transparent)]
 	#[expect(clippy::absolute_paths, reason = "feature-gated")]
-	/// IO error, in `no_std` environments this is a `()`
+	/// {0}
 	Io(std::io::Error),
 	#[cfg(not(feature = "std"))]
-	#[error("IO error")]
-	/// IO error, in `std` environments this is a `std::io::Error`
+	/// IO error
 	Io(()),
-	#[error("Invalid UTF-8 text at {0}")]
-	#[doc = "Invalid UTF-8 text at {0}"]
+	/// Invalid UTF-8 text at {0}
 	InvalidUtf8(usize),
-	#[error("invalid document character at {0}")]
-	#[doc = "invalid document character at {0}"]
+	/// invalid document character at {0}
 	InvalidCharacter(usize),
-	#[error("Unexpected end-of-file at {0}")]
-	#[doc = "Unexpected end-of-file at {0}"]
+	/// Unexpected end-of-file at {0}
 	UnexpectedEof(usize),
-	#[error("Bad escline body at {0}")]
-	#[doc = "Bad escline body at {0}"]
+	/// Bad escline body at {0}
 	BadEscline(usize),
-	#[error("Unexpected plain keyword")]
-	#[doc = "Unexpected plain keyword"]
+	/// Unexpected plain keyword
 	UnexpectedKeyword,
-	#[error("Invalid string escape at {0}")]
-	#[doc = "Invalid string escape at {0}"]
+	/// Invalid string escape at {0}
 	InvalidEscape(usize),
-	#[error("Invalid number value")]
-	#[doc = "Invalid number value"]
+	/// Invalid number value
 	InvalidNumber,
-	#[error("Bad unicode string escape at {0}")]
-	#[doc = "Bad unicode string escape at {0}"]
+	/// Bad unicode string escape at {0}
 	BadUnicodeEscape(usize),
-	#[error("Unexpected newline in single-line string at {0}")]
-	#[doc = "Unexpected newline in single-line string at {0}"]
+	/// Unexpected newline in single-line string at {0}
 	UnexpectedStringNewline(usize),
-	#[error("Bad raw string start")]
-	#[doc = "Bad raw string start"]
+	/// Bad raw string start
 	BadRawString,
-	#[error("Missing newline after multi-line string start")]
-	#[doc = "Missing newline after multi-line string start"]
+	/// Missing newline after multi-line string start
 	MissingStringNewline,
-	#[error("Text before multi-line string end at {0}")]
-	#[doc = "Text before multi-line string end at {0}"]
+	/// Text before multi-line string end at {0}
 	BadEndString(usize),
-	#[error("Bad multi-line string indent at {0:?}")]
-	#[doc = "Bad multi-line string indent at {0}"]
+	/// Bad multi-line string indent at {0:?}
 	BadIndent(Option<usize>),
-	#[error("Invalid operator")]
-	#[doc = "Invalid operator"]
+	/// Invalid operator
 	InvalidOperator,
-	#[error("Missing expected text")]
-	#[doc = "Missing expected text"]
+	/// Missing expected text
 	MissingText,
 }
+
+impl Error for LexerError {}
 
 /// Don't trust this impl :)
 impl PartialEq for LexerError {

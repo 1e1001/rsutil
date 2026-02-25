@@ -6,24 +6,24 @@
 //!
 //! You probably want to start at [`Validator`].
 
-use thiserror::Error;
+use std::error::Error;
+
+use displaydoc::Display;
 
 use crate::dom::Event;
 
 /// Error in validation
-#[derive(Clone, Debug, Error)]
+#[derive(Clone, Debug, Display)]
 #[non_exhaustive]
 pub enum ValidatorError {
-	#[error("Too many End events")]
-	#[doc = "Too many End events"]
+	/// Too many End events
 	TooManyEnd,
-	#[error("Unclosed nodes at end")]
-	#[doc = "Unclosed nodes at end"]
+	/// Unclosed nodes at end
 	Unclosed,
-	#[error("Expected {0}, got {1:?}")]
-	#[doc = "Expected {0}, got {1}"]
+	/// Expected {0}, got {1:?}
 	Expected(&'static str, Event),
 }
+impl Error for ValidatorError {}
 
 #[derive(Debug, Clone, Copy)]
 enum State {
