@@ -502,7 +502,7 @@ impl<T: Input> Lexer<T> {
 		}
 		Ok(())
 	}
-	// advances entire length of text
+	// advances the entire escape, including the \
 	fn string_escape(&mut self) -> LexerResult<Option<char>> {
 		let start_of_escape = self.cursor;
 		self.adv_certain(b"\\");
