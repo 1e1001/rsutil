@@ -105,22 +105,6 @@ impl<T> Miny<T> {
 			marker: PhantomData,
 		}
 	}
-	/// Attach the appropriate metadata to turn the value into an unsized value
-	#[inline]
-	#[must_use]
-	pub fn unsize<S: ?Sized>(this: Self) -> Miny<S>
-	where
-		T: Unsize<S>,
-	{
-		let meta = ptr::metadata(ptr::from_ref::<S>(&*this));
-		let data = this.data;
-		mem::forget(this);
-		Miny {
-			meta,
-			data,
-			marker: PhantomData,
-		}
-	}
 	/// Shorthand for `Miny::unsize(Miny::new(v))`,
 	/// or `Miny::from(Box::new(v) as S)`
 	#[inline]
@@ -132,7 +116,7 @@ impl<T> Miny<T> {
 		Self::unsize(Self::new(value))
 	}
 	/// Consume the `Miny` and take the value out,
-	/// equivalent to box's deref move
+	/// equivalent to [`Box`]'s moving dereference.
 	#[must_use]
 	pub fn into_inner(this: Self) -> T {
 		if goes_on_stack(Layout::new::<T>()) {
@@ -148,6 +132,23 @@ impl<T> Miny<T> {
 }
 
 impl<T: ?Sized> Miny<T> {
+	/// Equivalent to `this as Miny<S>`,
+	/// performs extra logic to attach metadata.
+	#[inline]
+	#[must_use]
+	pub fn unsize<S: ?Sized>(this: Self) -> Miny<S>
+	where
+		T: Unsize<S>,
+	{
+		let meta = ptr::metadata(ptr::from_ref::<S>(&*this));
+		let data = this.data;
+		mem::forget(this);
+		Miny {
+			meta,
+			data,
+			marker: PhantomData,
+		}
+	}
 	/// # Safety
 	/// must be on heap
 	#[inline]
@@ -171,7 +172,7 @@ impl<T: ?Sized> Miny<T> {
 	#[inline]
 	pub fn on_stack(this: &Self) -> bool { goes_on_stack(Self::layout(this)) }
 	// we can't impl From<Miny<T>> for Box<T> for fun reasons so instead we get this
-	/// Consume the `Miny` and take the value out as a [`Box`], as opposed to
+	/// Consume the `Miny` and take the value out as a [`Box`], unlike
 	/// [`into_inner`] it also works on unsized values.
 	///
 	/// [`into_inner`]: Self::into_inner

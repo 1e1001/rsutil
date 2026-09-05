@@ -20,6 +20,10 @@ assert_eq!(original, [1; 32]);
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 2.2.0
+- `Miny::unsize` now works for `T: ?Sized`, allowing `Miny<dyn SuperTrait>` → `Miny<dyn SubTrait>` conversions
+- Removed broken `downcast_*` implementations, favoring `Miny<dyn Any>::unsize(_unchecked)` or the direct `<dyn Any>::unsize_*`, after an `unsize`.
+
 ### 2.1.0
 - Add `allocative` feature [(thanks, Cormac!)](https://github.com/1e1001/rsutil/pull/2)
 

@@ -78,61 +78,31 @@ unsafe impl<T: ?Sized + Sync> Sync for Miny<T> {}
 // SAFETY: should be fine, ownership is passed along with the pointer / value
 unsafe impl<T: ?Sized + Send> Send for Miny<T> {}
 
-/// Extra implementations for `Box<dyn Any>`-like behavior
-impl<T: ?Sized + Any> Miny<T> {
-	/// Returns `true` if the inner type is the same as `T`.
-	#[inline]
-	pub fn is<V: Any>(&self) -> bool { TypeId::of::<V>() == (**self).type_id() }
-	/// Returns a reference to the inner value
-	/// # Safety
-	/// The contained value must be of type `T`. Calling this method
-	/// with the incorrect type is *undefined behavior*.
-	pub unsafe fn downcast_ref_unchecked<V: Any>(&self) -> &V {
-		debug_assert!(self.is::<V>(), "unchecked cast was wrong!");
-		&*ptr::from_ref(self.as_ref()).cast::<V>()
-	}
-	/// Returns a mutable reference to the inner value
-	/// # Safety
-	/// The contained value must be of type `T`. Calling this method
-	/// with the incorrect type is *undefined behavior*.
-	pub unsafe fn downcast_mut_unchecked<V: Any>(&mut self) -> &mut V {
-		debug_assert!(self.is::<V>(), "unchecked cast was wrong!");
-		&mut *ptr::from_mut(self.as_mut()).cast::<V>()
-	}
+/// Extra implementations for `Box<dyn Any>`-like behavior.
+///
+/// If you have a `dyn Any + OtherTrait` or `dyn SuperTrait`
+/// (where `SuperTrait: Any`), you can use [`Miny::unsize<dyn Any>`] first.
+impl Miny<dyn Any> {
 	/// Downcasts the value to a concrete type
 	/// # Safety
 	/// The contained value must be of type `T`. Calling this method
 	/// with the incorrect type is *undefined behavior*.
-	pub unsafe fn downcast_unchecked<V: Any>(self) -> V {
-		debug_assert!(self.is::<V>(), "unchecked cast was wrong!");
+	pub unsafe fn downcast_unchecked<T: Any>(self) -> Miny<T> {
+		debug_assert!(self.is::<T>(), "unchecked cast was wrong!");
 		// cursed as hell
 		let data = self.data;
 		mem::forget(self);
-		Miny::into_inner(Miny::<V> {
+		Miny::<T> {
 			data,
 			meta: (),
 			marker: PhantomData,
-		})
-	}
-	/// Returns a reference to the inner value if it is of type `T`, or `None`
-	/// if it isn't
-	pub fn downcast_ref<V: Any>(&self) -> Option<&V> {
-		self.is::<V>().then(||
-			// SAFETY: asserted type matches
-			unsafe { self.downcast_ref_unchecked() })
-	}
-	/// Returns a mutable reference to the inner value if it is of type `T`, or
-	/// `None` if it isn't
-	pub fn downcast_mut<V: Any>(&mut self) -> Option<&mut V> {
-		self.is::<V>().then(||
-			// SAFETY: asserted type matches
-			unsafe { self.downcast_mut_unchecked() })
+		}
 	}
 	/// Attempts to downcast the value to a concrete type, returning the
-	/// original instance if not
-	#[expect(clippy::missing_errors_doc, reason = "obvious implementation")]
-	pub fn downcast<V: Any>(self) -> Result<V, Self> {
-		if self.is::<V>() {
+	/// original instance if not.
+	#[expect(clippy::missing_errors_doc, reason = "non-error result")]
+	pub fn downcast<T: Any>(self) -> Result<Miny<T>, Self> {
+		if self.is::<T>() {
 			// SAFETY: asserted type matches
 			Ok(unsafe { self.downcast_unchecked() })
 		} else {

@@ -20,7 +20,7 @@ fn dyn_values() {
 	let small1: Miny<dyn Any> = Miny::new_unsized(1_u8);
 	let small2: Miny<dyn Any + Sync + Send> = Miny::new_unsized(2_u8);
 	let large1: Miny<dyn Any> = Miny::new_unsized([1_usize; 32]);
-	let large2: Miny<dyn Any + Sync + Send> = Miny::new_unsized([1_usize; 32]);
+	let large2: Miny<dyn Any + Sync + Send> = Miny::new_unsized([2_usize; 32]);
 	assert!(Miny::on_stack(&small1));
 	assert!(Miny::on_stack(&small2));
 	assert!(!Miny::on_stack(&large1));
@@ -29,6 +29,35 @@ fn dyn_values() {
 	assert!(small2.is::<u8>());
 	assert!(large1.is::<[usize; 32]>());
 	assert!(large2.is::<[usize; 32]>());
+	assert_eq!(small1.downcast_ref::<u8>(), Some(&1));
+	assert_eq!(small1.downcast_ref::<[usize; 32]>(), None);
+	assert_eq!(small2.downcast_ref::<u8>(), Some(&2));
+	assert_eq!(small2.downcast_ref::<[usize; 32]>(), None);
+	let (mut small1, mut small2) = (small1, small2);
+	assert_eq!(small1.downcast_mut::<u8>(), Some(&mut 1));
+	assert_eq!(small1.downcast_mut::<[usize; 32]>(), None);
+	assert_eq!(small2.downcast_mut::<u8>(), Some(&mut 2));
+	assert_eq!(small2.downcast_mut::<[usize; 32]>(), None);
+	assert_eq!(*large1.downcast::<[usize; 32]>().unwrap(), [1; 32]);
+	assert_eq!(
+		*Miny::unsize::<dyn Any>(large2)
+			.downcast::<[usize; 32]>()
+			.unwrap(),
+		[2; 32]
+	);
+}
+
+#[test]
+fn hidden_dyn_values() {
+	// example supertrait of Any
+	trait SecretAny: Any {}
+	impl<T: 'static> SecretAny for T {}
+	let small: Miny<dyn SecretAny> = Miny::new_unsized(1_u8);
+	let large: Miny<dyn SecretAny> = Miny::new_unsized([1_usize; 32]);
+	assert!(Miny::on_stack(&small));
+	assert!(!Miny::on_stack(&large));
+	assert!(Miny::unsize::<dyn Any>(small).is::<u8>());
+	assert!(Miny::unsize::<dyn Any>(large).is::<[usize; 32]>());
 }
 
 #[test]
