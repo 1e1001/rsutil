@@ -121,6 +121,8 @@ pub trait DebugIterator {
 impl<T> DebugIterator for T
 where
 	T: IntoIterator,
+	// this isn't the exact bound for `KvIterDebug`,
+	// but it keeps the extension in one trait and is always true for (K, V) pairs
 	T::Item: Debug,
 {
 	#[inline]
