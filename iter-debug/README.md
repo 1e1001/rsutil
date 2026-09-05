@@ -14,6 +14,9 @@ println!("{:?}", [1, 2, 3, 4].into_iter().map(|v| v * 2).debug());
 For more information, [read the docs](https://docs.rs/iter-debug).
 
 ## Changelog
+### 1.1.0
+- `debug_set`, `debug_tuple`, `debug_struct`, `debug_map` stylistic formatters
+
 ### 1.0.2
 - Do not error on repeated formats
 

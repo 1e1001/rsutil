@@ -26,17 +26,26 @@ use core::option::Option;
 #[cfg(test)]
 mod tests;
 
+enum IterDebugStyle {
+	List,
+	Set,
+}
+
 /// The whole point, see the [crate docs](`crate`).
 ///
 /// Note that an iterator can only be debugged once, aim to wrap your iterator
 /// as late as possible, usually directly in the print / format statement.
-pub struct IterDebug<T>(Cell<Option<T>>);
+pub struct IterDebug<T>(Cell<Option<T>>, IterDebugStyle);
 
 impl<T> IterDebug<T> {
 	/// Construct a new instance directly, instead of using the
-	/// [`debug`](DebugIterator::debug) method.
+	/// [`debug`](DebugIterator::debug) method. Prints output as a list.
 	#[inline]
-	pub fn new(item: T) -> Self { Self(Cell::new(Option::Some(item))) }
+	pub fn new(item: T) -> Self { Self(Cell::new(Option::Some(item)), IterDebugStyle::List) }
+	/// Construct a new instance directly, instead of using the
+	/// [`debug`](DebugIterator::debug) method. Prints output as a set.
+	#[inline]
+	pub fn new_set(item: T) -> Self { Self(Cell::new(Option::Some(item)), IterDebugStyle::Set) }
 	/// Attempt to extract the inner iterator, returning [`None`](Option::None)
 	/// if it has already been removed or debug printed.
 	#[inline]
@@ -50,8 +59,41 @@ where
 {
 	#[inline]
 	fn fmt(&self, f: &mut Formatter) -> Result {
+		match (self.0.take(), &self.1) {
+			(Option::Some(value), IterDebugStyle::List) => f.debug_list().entries(value).finish(),
+			(Option::Some(value), IterDebugStyle::Set) => f.debug_set().entries(value).finish(),
+			(Option::None, _) => f.write_str("<consumed iterator>"),
+		}
+	}
+}
+
+/// [`IterDebug`] but styled with key-value formatting
+///
+/// Note that an iterator can only be debugged once, aim to wrap your iterator
+/// as late as possible, usually directly in the print / format statement.
+pub struct KvIterDebug<T>(Cell<Option<T>>);
+
+impl<T> KvIterDebug<T> {
+	/// Construct a new instance directly, instead of using the
+	/// [`debug`](DebugIterator::debug) method. Prints output as a map.
+	#[inline]
+	pub fn new(item: T) -> Self { Self(Cell::new(Option::Some(item))) }
+	/// Attempt to extract the inner iterator, returning [`None`](Option::None)
+	/// if it has already been removed or debug printed.
+	#[inline]
+	pub fn try_into_inner(&self) -> Option<T> { self.0.take() }
+}
+
+impl<T, K, V> Debug for KvIterDebug<T>
+where
+	T: IntoIterator<Item = (K, V)>,
+	K: Debug,
+	V: Debug,
+{
+	#[inline]
+	fn fmt(&self, f: &mut Formatter) -> Result {
 		match self.0.take() {
-			Option::Some(value) => f.debug_list().entries(value).finish(),
+			Option::Some(value) => f.debug_map().entries(value).finish(),
 			Option::None => f.write_str("<consumed iterator>"),
 		}
 	}
@@ -63,8 +105,16 @@ where
 /// Automatically implemented for all [`IntoIterator`] with [`Debug`]-able
 /// items.
 pub trait DebugIterator {
-	/// Convert this iterator into an [`IterDebug`] for printing
+	/// Convert this iterator to a [`Debug`]-printable value, printed as a list.
 	fn debug(self) -> IterDebug<Self>
+	where
+		Self: Sized;
+	/// Convert this iterator to a [`Debug`]-printable value, printed as a set.
+	fn debug_set(self) -> IterDebug<Self>
+	where
+		Self: Sized;
+	/// Convert this iterator to a [`Debug`]-printable value, printed as a map.
+	fn debug_map(self) -> KvIterDebug<Self>
 	where
 		Self: Sized;
 }
@@ -79,5 +129,18 @@ where
 		Self: Sized,
 	{
 		IterDebug::new(self)
+	}
+	#[inline]
+	fn debug_set(self) -> IterDebug<Self>
+	where
+		Self: Sized,
+	{
+		IterDebug::new_set(self)
+	}
+	fn debug_map(self) -> KvIterDebug<Self>
+	where
+		Self: Sized,
+	{
+		KvIterDebug::new(self)
 	}
 }
