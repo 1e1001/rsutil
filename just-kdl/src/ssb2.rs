@@ -15,7 +15,7 @@ const MAX_INLINE: usize = 23;
 pub enum SmolStrBuilder2 {
 	Inline {
 		size: usize,
-		// buffer must always be valid utf-8
+		// buffer[..size] is valid utf-8
 		buffer: [u8; MAX_INLINE],
 	},
 	Heap(String),
@@ -36,7 +36,7 @@ impl SmolStrBuilder2 {
 		match self {
 			SmolStrBuilder2::Inline { size, buffer } => {
 				let buffer = &buffer[..size];
-				// SAFETY: struct invariant
+				// SAFETY: buffer[..size] is valid utf-8
 				SmolStr::new_inline(unsafe { str::from_utf8_unchecked(buffer) })
 			}
 			SmolStrBuilder2::Heap(text) => SmolStr::from(Arc::from(text.into_boxed_str())),
@@ -54,7 +54,7 @@ impl SmolStrBuilder2 {
 				if *size + n > MAX_INLINE {
 					let mut bytes = Vec::with_capacity(*size + n);
 					bytes.extend_from_slice(&buffer[..*size]);
-					// SAFETY: struct invariant
+					// SAFETY: buffer[..size] is valid utf-8, and bytes == buffer[..size] here
 					*self = SmolStrBuilder2::Heap(unsafe { String::from_utf8_unchecked(bytes) });
 				}
 			}
@@ -66,12 +66,9 @@ impl SmolStrBuilder2 {
 		self.reserve(len);
 		match self {
 			SmolStrBuilder2::Inline { size, buffer } => {
-				// preserves utf-8: writes one codepoint (encoded)
-				debug_assert_eq!(
-					c.encode_utf8(&mut buffer[*size..]).len(),
-					len,
-					"utf8 horrors"
-				);
+				// preserves utf-8 validity, reserved size should always be enough
+				let encoded = c.encode_utf8(&mut buffer[*size..]).len();
+				debug_assert_eq!(encoded, len, "utf8 horrors");
 				*size += len;
 			}
 			SmolStrBuilder2::Heap(text) => text.push(c),
@@ -116,7 +113,8 @@ impl SmolStrBuilder2 {
 		}
 		match self {
 			SmolStrBuilder2::Inline { size, buffer } => {
-				*size = floor_char_boundary(buffer, len.min(*size));
+				// preserves utf-8: len will be a char boundary (or equal to size)
+				*size = floor_char_boundary(&buffer[..*size], len);
 			}
 			SmolStrBuilder2::Heap(text) => text.truncate(text.floor_char_boundary(len)),
 		}
@@ -127,7 +125,7 @@ impl SmolStrBuilder2 {
 		self.reserve(n);
 		match self {
 			SmolStrBuilder2::Inline { size, buffer } => {
-				// preserves utf-8: writes ascii
+				// preserves utf-8: only writes ascii bytes
 				buffer[*size..][..n].fill(c);
 				*size += n;
 			}
@@ -140,13 +138,14 @@ impl SmolStrBuilder2 {
 		match self {
 			SmolStrBuilder2::Inline { size, buffer } => {
 				assert!(*size > 0, "out of bounds swap0");
+				// preserves utf-8: only swaps ascii character
 				assert!(buffer[0] < 128, "bad swap0");
 				buffer[0] = c;
 			}
 			SmolStrBuilder2::Heap(s) => {
 				let substr = &mut s[..1];
-				// SAFETY: existing value is a ascii character (asserted by string slice),
-				// replaced with new ascii character
+				// SAFETY: substr is a single-byte utf-8 character (asserted by string index),
+				// therefore it must be ascii, and is replaced with new ascii character
 				unsafe {
 					substr.as_bytes_mut()[0] = c;
 				}

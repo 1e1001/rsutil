@@ -376,6 +376,7 @@ impl<T: Input> Lexer<T> {
 		self.cursor += n;
 		self.reader.advance(n);
 	}
+	// text must have been peeked before calling
 	fn adv_certain(&mut self, text: &[u8]) {
 		debug_assert_eq!(
 			self.peek(text.len()..text.len()).unwrap(),

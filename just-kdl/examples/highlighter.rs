@@ -14,6 +14,7 @@ fn main() {
 	let mut lexer = Lexer::new(&*file);
 	let mut prev_token = None;
 	loop {
+		// always skip, use span to index text
 		let token = lexer.next_token(true);
 		let eof = matches!(token, (Ok(Token::Eof), _));
 		let end = token.1;

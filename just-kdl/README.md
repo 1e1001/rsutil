@@ -21,6 +21,9 @@ kdl {
 For more information, [read the docs](https://docs.rs/miny).
 
 ## Changelog
+### 0.3.1
+- Fix some lexing being broken in release mode
+
 ### 0.3.0
 - Remove `hashbrown` by making `dom::Node::normalize` and `dom::Document::normalize` std-gated.
 - Fix `dom::{Node, Document} as Display` and `writer::Writer` incorrectly rendering empty child blocks.
